@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Documentation files (internal use only)
+CLAUDE.md
+DATABASE_SCHEMA.md
+IMPLEMENTATION_PLAN.md
+LANDING_PAGE.md
+OAUTH_SETUP.md
+PROJECT_SUMMARY.md
+SETUP.md
+SMS_PAUSE_NOTE.md
+STRIPE_SETUP.md
+TODO.md
+TWILIO_SETUP.md
