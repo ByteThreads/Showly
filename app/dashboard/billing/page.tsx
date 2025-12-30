@@ -175,7 +175,7 @@ export default function BillingPage() {
                 {agent.subscriptionEndDate && (
                   <p className="mt-1 text-gray-600">
                     Access until:{' '}
-                    {new Date(agent.subscriptionEndDate).toLocaleDateString('en-US', {
+                    {agent.subscriptionEndDate.toDate().toLocaleDateString('en-US', {
                       month: 'long',
                       day: 'numeric',
                       year: 'numeric',

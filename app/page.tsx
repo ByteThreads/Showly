@@ -392,7 +392,7 @@ function VerticalTimeline() {
           return (
             <div
               key={index}
-              ref={(el) => (stepRefs.current[index] = el)}
+              ref={(el) => { stepRefs.current[index] = el; }}
               className="relative"
             >
               {/* Step number circle on timeline */}
@@ -509,7 +509,7 @@ export default function LandingPage() {
     const pricingFeatures = document.querySelectorAll('.pricing-feature');
     const pricingCta = document.querySelector('.pricing-cta');
     const pricingDisclaimer = document.querySelector('.pricing-disclaimer');
-    const pricingGradient = document.querySelector('.pricing-gradient-overlay');
+    const pricingGradient = document.querySelector('.pricing-gradient-overlay') as HTMLElement | null;
 
     const pricingObserver = new IntersectionObserver(
       (entries) => {

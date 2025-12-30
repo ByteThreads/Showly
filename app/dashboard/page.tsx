@@ -573,7 +573,7 @@ export default function DashboardPage() {
                       {lead.count} showings
                     </span>
                   </div>
-                  <div className="text-xs text-gray-600">{lead.email}</div>
+                  <div className="text-xs text-gray-600">{lead.clientEmail}</div>
                   <div className="text-xs text-gray-500 mt-1">
                     Viewed: {lead.properties.slice(0, 2).join(', ')}
                     {lead.properties.length > 2 && ` +${lead.properties.length - 2} more`}

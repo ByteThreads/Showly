@@ -52,7 +52,7 @@ export default function NewPropertyPage() {
 
   const { inputRef: streetInputRef } = useGooglePlaces(handlePlaceSelected);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,

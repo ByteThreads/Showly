@@ -97,7 +97,7 @@ export default function DevInitAccountPage() {
                     Subscription: {agent.subscriptionStatus || 'Not set'}
                   </p>
                   <p className="text-sm text-gray-700">
-                    Trial Start: {agent.trialStartDate ? new Date(agent.trialStartDate).toLocaleString() : 'Not set'}
+                    Trial Start: {agent.trialStartDate ? agent.trialStartDate.toDate().toLocaleString() : 'Not set'}
                   </p>
                   <p className="text-sm text-gray-700">
                     Trial Showings: {agent.trialShowingsCount ?? 'Not set'}

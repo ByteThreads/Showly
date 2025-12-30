@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const agentData: Omit<Agent, 'id'> = {
               email: result.user.email!,
               name: result.user.displayName || 'Agent',
-              phone: result.user.phoneNumber || undefined,
+              phone: result.user.phoneNumber || '',
               photoURL: result.user.photoURL || undefined,
               subscriptionStatus: 'trial',
               trialStartDate: Timestamp.now(),
