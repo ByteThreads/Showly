@@ -1,4 +1,5 @@
 // TypeScript types matching Firestore database schema
+import type { Timestamp } from 'firebase/firestore';
 
 export type SubscriptionStatus = 'active' | 'inactive' | 'trial' | 'cancelled' | 'past_due';
 export type ShowingStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
@@ -51,18 +52,18 @@ export interface Agent {
   stripeSubscriptionId?: string;
   stripePriceId?: string;  // Which product/price they're subscribed to (founder vs standard)
   subscriptionStatus: SubscriptionStatus;
-  subscriptionEndDate?: Date;
+  subscriptionEndDate?: Timestamp;
 
   // Trial Tracking
-  trialStartDate?: Date;
+  trialStartDate?: Timestamp;
   trialShowingsCount: number;  // Count showings during trial for 3-showing limit
 
   // Founder Program (first 200 customers)
   isFounderCustomer: boolean;
   founderNumber?: number;  // 1-200 for early customers
 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   settings: AgentSettings;
 }
 
@@ -92,8 +93,8 @@ export interface Property {
   bookingSlug: string;
   isBookingEnabled: boolean;
   timezone: string; // IANA timezone identifier (e.g., "America/New_York")
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface ClientInfo {
@@ -115,7 +116,7 @@ export interface ShowingFeedback {
   interested: boolean;
   rating?: number;
   comments?: string;
-  submittedAt?: Date;
+  submittedAt?: Timestamp;
 }
 
 export interface Showing {
@@ -127,19 +128,19 @@ export interface Showing {
   clientPhone: string;
   notes?: string;
   preApproved: boolean;
-  scheduledAt: Date;
+  scheduledAt: Timestamp;
   duration: number;
   status: ShowingStatus;
   clientWantsReminders: boolean; // Whether client opted in to receive email reminders
   clientWantsSMS: boolean; // Whether client explicitly opted in to receive SMS notifications (TCPA compliance)
-  smsConsentTimestamp?: Date; // When client provided SMS consent (TCPA compliance)
+  smsConsentTimestamp?: Timestamp; // When client provided SMS consent (TCPA compliance)
   reminders: Reminders;
   feedback?: ShowingFeedback;
-  cancelledAt?: Date;
+  cancelledAt?: Timestamp;
   cancellationReason?: string;
-  rescheduledFrom?: Date; // Original scheduled time if rescheduled
-  createdAt: Date;
-  updatedAt: Date;
+  rescheduledFrom?: Timestamp; // Original scheduled time if rescheduled
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface Feedback {
@@ -152,7 +153,7 @@ export interface Feedback {
   comments: string;
   clientName: string;
   clientEmail: string;
-  submittedAt: Date;
+  submittedAt: Timestamp;
 }
 
 // Helper types for forms
