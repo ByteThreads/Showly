@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator, type FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -29,9 +29,9 @@ try {
   throw error;
 }
 
-let auth;
-let db;
-let storage;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
 
 try {
   auth = getAuth(app);
