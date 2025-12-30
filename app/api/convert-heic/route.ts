@@ -38,7 +38,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Create response with JPEG data
-    return new NextResponse(outputBuffer, {
+    // Convert Buffer to Uint8Array for NextResponse compatibility
+    const uint8Array = new Uint8Array(outputBuffer);
+
+    return new NextResponse(uint8Array, {
       status: 200,
       headers: {
         'Content-Type': 'image/jpeg',
