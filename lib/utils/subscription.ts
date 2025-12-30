@@ -18,7 +18,7 @@ export function isInTrial(agent: Agent | null): boolean {
 
   // Check if trial has expired (14 days)
   if (agent.trialStartDate) {
-    const trialStart = agent.trialStartDate.toDate();
+    const trialStart = agent.trialStartDate instanceof Date ? agent.trialStartDate : new Date(agent.trialStartDate);
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
@@ -57,7 +57,7 @@ export function getRemainingTrialShowings(agent: Agent | null): number {
 export function getRemainingTrialDays(agent: Agent | null): number {
   if (!agent || !agent.trialStartDate) return 0;
 
-  const trialStart = agent.trialStartDate.toDate();
+  const trialStart = agent.trialStartDate instanceof Date ? agent.trialStartDate : new Date(agent.trialStartDate);
   const now = new Date();
   const diffTime = now.getTime() - trialStart.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

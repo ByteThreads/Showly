@@ -148,7 +148,7 @@ export default function BillingPage() {
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <span>
                       {STRINGS.billing.nextBilling}:{' '}
-                      {agent.subscriptionEndDate.toDate().toLocaleDateString('en-US', {
+                      {new Date(agent.subscriptionEndDate).toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
                         year: 'numeric',
@@ -175,7 +175,7 @@ export default function BillingPage() {
                 {agent.subscriptionEndDate && (
                   <p className="mt-1 text-gray-600">
                     Access until:{' '}
-                    {agent.subscriptionEndDate.toDate().toLocaleDateString('en-US', {
+                    {new Date(agent.subscriptionEndDate).toLocaleDateString('en-US', {
                       month: 'long',
                       day: 'numeric',
                       year: 'numeric',

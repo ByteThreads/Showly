@@ -52,18 +52,18 @@ export interface Agent {
   stripeSubscriptionId?: string;
   stripePriceId?: string;  // Which product/price they're subscribed to (founder vs standard)
   subscriptionStatus: SubscriptionStatus;
-  subscriptionEndDate?: Timestamp;
+  subscriptionEndDate?: Date;  // Date (converted from Timestamp by auth context)
 
   // Trial Tracking
-  trialStartDate?: Timestamp;
+  trialStartDate?: Date;  // Date (converted from Timestamp by auth context)
   trialShowingsCount: number;  // Count showings during trial for 3-showing limit
 
   // Founder Program (first 200 customers)
   isFounderCustomer: boolean;
   founderNumber?: number;  // 1-200 for early customers
 
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: Date;  // Date (converted from Timestamp by auth context)
+  updatedAt: Date;  // Date (converted from Timestamp by auth context)
   settings: AgentSettings;
 }
 
