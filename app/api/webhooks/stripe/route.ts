@@ -150,16 +150,16 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
     await updateDoc(doc(db, 'agents', agentDoc.id), {
       subscriptionStatus: 'cancelled',
-      subscriptionEndDate: subscription.currentPeriodEnd
-        ? new Date(subscription.currentPeriodEnd * 1000)
+      subscriptionEndDate: subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
         : undefined,
       updatedAt: new Date(),
     });
   } else {
     await updateDoc(doc(db, 'agents', agentId), {
       subscriptionStatus: 'cancelled',
-      subscriptionEndDate: subscription.currentPeriodEnd
-        ? new Date(subscription.currentPeriodEnd * 1000)
+      subscriptionEndDate: subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
         : undefined,
       updatedAt: new Date(),
     });
@@ -210,8 +210,8 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
     subscriptionStatus: status,
     stripeSubscriptionId: subscription.id,
     stripePriceId: priceId,
-    subscriptionEndDate: subscription.currentPeriodEnd
-      ? new Date(subscription.currentPeriodEnd * 1000)
+    subscriptionEndDate: subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000)
       : undefined,
     updatedAt: new Date(),
   });
