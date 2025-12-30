@@ -409,9 +409,10 @@ export const STRINGS = {
       active: 'Active',
       trial: 'Free Trial',
       pastDue: 'Payment Past Due',
+      past_due: 'Payment Past Due', // snake_case alias for database compatibility
       cancelled: 'Cancelled',
       inactive: 'Inactive',
-    },
+    } as Record<string, string>,
   },
 
   // Landing Page
