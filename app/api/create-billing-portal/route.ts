@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import type { Agent } from '@/types/database';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const agent = { id: agentDoc.id, ...agentDoc.data() };
+    const agent = { id: agentDoc.id, ...agentDoc.data() } as Agent;
 
     if (!agent.stripeCustomerId) {
       return NextResponse.json(

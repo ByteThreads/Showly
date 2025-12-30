@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { stripe, mapStripeStatus } from '@/lib/stripe';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import type { Agent } from '@/types/database';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -149,16 +150,16 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
     await updateDoc(doc(db, 'agents', agentDoc.id), {
       subscriptionStatus: 'cancelled',
-      subscriptionEndDate: subscription.current_period_end
-        ? new Date(subscription.current_period_end * 1000)
+      subscriptionEndDate: subscription.currentPeriodEnd
+        ? new Date(subscription.currentPeriodEnd * 1000)
         : undefined,
       updatedAt: new Date(),
     });
   } else {
     await updateDoc(doc(db, 'agents', agentId), {
       subscriptionStatus: 'cancelled',
-      subscriptionEndDate: subscription.current_period_end
-        ? new Date(subscription.current_period_end * 1000)
+      subscriptionEndDate: subscription.currentPeriodEnd
+        ? new Date(subscription.currentPeriodEnd * 1000)
         : undefined,
       updatedAt: new Date(),
     });
@@ -209,8 +210,8 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
     subscriptionStatus: status,
     stripeSubscriptionId: subscription.id,
     stripePriceId: priceId,
-    subscriptionEndDate: subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000)
+    subscriptionEndDate: subscription.currentPeriodEnd
+      ? new Date(subscription.currentPeriodEnd * 1000)
       : undefined,
     updatedAt: new Date(),
   });
@@ -218,7 +219,7 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
   console.log(`Updated subscription for agent ${agentId}: ${status}`);
 }
 
-async function findAgentByStripeCustomer(customerId: string) {
+async function findAgentByStripeCustomer(customerId: string): Promise<Agent | null> {
   const agentsRef = collection(db, 'agents');
   const q = query(agentsRef, where('stripeCustomerId', '==', customerId));
   const snapshot = await getDocs(q);
@@ -227,5 +228,5 @@ async function findAgentByStripeCustomer(customerId: string) {
     return null;
   }
 
-  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Agent;
 }
