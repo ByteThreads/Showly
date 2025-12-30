@@ -13,7 +13,7 @@ export default function PricingContent() {
   const searchParams = useSearchParams();
   const { user, agent } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<'founder' | 'standard' | null>(null);
-  const [founderSpotsRemaining, setFounderSpotsRemaining] = useState<number | null>(null);
+  const [founderSpotsRemaining, setFounderSpotsRemaining] = useState<number | null>(200); // Start optimistically at 200
   const cancelled = searchParams?.get('cancelled') === 'true';
 
   // Check founder spots remaining
@@ -98,12 +98,12 @@ export default function PricingContent() {
           <div
             className={cn(
               "relative bg-white rounded-2xl shadow-lg overflow-hidden border-2",
-              founderSpotsRemaining && founderSpotsRemaining > 0
+              (founderSpotsRemaining ?? 0) > 0
                 ? "border-purple-500"
                 : "border-gray-200 opacity-75"
             )}
           >
-            {founderSpotsRemaining && founderSpotsRemaining > 0 && (
+            {(founderSpotsRemaining ?? 0) > 0 && (
               <div className="absolute top-4 right-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                   {STRINGS.pricing.founder.badge}
@@ -164,10 +164,10 @@ export default function PricingContent() {
               {/* CTA Button */}
               <button
                 onClick={() => handleStartTrial('founder')}
-                disabled={loadingPlan !== null || (founderSpotsRemaining !== null && founderSpotsRemaining === 0)}
+                disabled={loadingPlan !== null || founderSpotsRemaining === 0}
                 className={cn(
                   "w-full py-3 px-6 rounded-lg font-semibold text-white transition-colors",
-                  founderSpotsRemaining && founderSpotsRemaining > 0
+                  (founderSpotsRemaining ?? 0) > 0
                     ? "bg-purple-600 hover:bg-purple-700"
                     : "bg-gray-400 cursor-not-allowed"
                 )}
