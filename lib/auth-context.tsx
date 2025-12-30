@@ -17,7 +17,7 @@ import {
   GoogleAuthProvider as GoogleAuthProviderType,
   OAuthCredential
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import type { Agent } from '@/types/database';
 
@@ -102,11 +102,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               phone: result.user.phoneNumber || undefined,
               photoURL: result.user.photoURL || undefined,
               subscriptionStatus: 'trial',
-              trialStartDate: new Date(),
+              trialStartDate: Timestamp.now(),
               trialShowingsCount: 0,
               isFounderCustomer: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
+              createdAt: Timestamp.now(),
+              updatedAt: Timestamp.now(),
               settings: {
                 defaultShowingDuration: 30,
                 bufferTime: 15,
@@ -190,11 +190,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name,
         phone,
         subscriptionStatus: 'trial',
-        trialStartDate: new Date(),
+        trialStartDate: Timestamp.now(),
         trialShowingsCount: 0,
         isFounderCustomer: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
         settings: {
           defaultShowingDuration: 30,
           bufferTime: 15,

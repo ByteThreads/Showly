@@ -148,7 +148,7 @@ export default function BillingPage() {
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <span>
                       {STRINGS.billing.nextBilling}:{' '}
-                      {new Date(agent.subscriptionEndDate).toLocaleDateString('en-US', {
+                      {agent.subscriptionEndDate.toDate().toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
                         year: 'numeric',
