@@ -23,6 +23,28 @@ export const metadata: Metadata = {
     icon: '/logo.svg',
     apple: '/logo.svg',
   },
+  openGraph: {
+    title: "Showly - Real Estate Showing Scheduler",
+    description: "Schedule property showings without the back-and-forth",
+    url: "https://www.showly.io",
+    siteName: "Showly",
+    images: [
+      {
+        url: '/og-image.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Showly - Real Estate Showing Scheduler',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Showly - Real Estate Showing Scheduler",
+    description: "Schedule property showings without the back-and-forth",
+    images: ['/og-image.svg'],
+  },
 };
 
 export default function RootLayout({
