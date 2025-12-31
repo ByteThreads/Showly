@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -19,8 +19,15 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { signUp, signInWithGoogle, signInWithApple } = useAuth();
+  const { user, signUp, signInWithGoogle, signInWithApple } = useAuth();
   const router = useRouter();
+
+  // Redirect to dashboard if user is already authenticated
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   function getFriendlyErrorMessage(errorCode: string): string {
     switch (errorCode) {
@@ -58,7 +65,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signInWithGoogle();
-      router.push('/dashboard');
+      // Redirect will be handled by useEffect after auth state changes
     } catch (err: any) {
       const errorCode = err.code || '';
       const errorMessage = err.message || '';
@@ -83,7 +90,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signInWithApple();
-      router.push('/dashboard');
+      // Redirect will be handled by useEffect after auth state changes
     } catch (err: any) {
       const errorCode = err.code || '';
       const errorMessage = err.message || '';
