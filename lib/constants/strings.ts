@@ -418,7 +418,7 @@ export const STRINGS = {
   // Landing Page
   landing: {
     hero: {
-      headline: 'Property Showing Scheduling Made Simple',
+      headline: 'Simpler Scheduling. Better Showings.',
       subheadline: 'Stop the back-and-forth. Let clients book property showings instantly with your shareable link.',
       cta: 'Start Free Trial',
       secondaryCta: 'See How It Works',
