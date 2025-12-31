@@ -7,8 +7,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   OAuthProvider,
   sendPasswordResetEmail,
@@ -77,87 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Listen to auth state changes
   useEffect(() => {
     console.log('[AuthContext] Setting up auth listener...');
-    console.log('[AuthContext] Firebase Auth object:', auth);
-    console.log('[AuthContext] Firebase config check:', {
-      apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    });
-
-    // Handle redirect result from OAuth sign-in
-    async function handleRedirectResult() {
-      console.log('[AuthContext] Checking for redirect result...');
-      console.log('[AuthContext] Current URL:', window.location.href);
-      console.log('[AuthContext] URL params:', window.location.search);
-
-      try {
-        // Add a small delay to ensure Firebase is fully initialized
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        const result = await getRedirectResult(auth);
-        console.log('[AuthContext] Redirect result:', result);
-
-        if (result && result.user) {
-          console.log('[AuthContext] Redirect result received for user:', result.user.uid);
-          console.log('[AuthContext] User email:', result.user.email);
-          console.log('[AuthContext] User name:', result.user.displayName);
-
-          // Check if agent document exists
-          const agentDoc = await getDoc(doc(db, 'agents', result.user.uid));
-
-          if (!agentDoc.exists()) {
-            console.log('[AuthContext] Creating new agent document...');
-            // New user - create agent document
-            const agentData: Omit<Agent, 'id'> = {
-              email: result.user.email!,
-              name: result.user.displayName || 'Agent',
-              phone: result.user.phoneNumber || '',
-              photoURL: result.user.photoURL || undefined,
-              subscriptionStatus: 'trial',
-              trialStartDate: new Date(),
-              trialShowingsCount: 0,
-              isFounderCustomer: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              settings: {
-                defaultShowingDuration: 30,
-                bufferTime: 15,
-                bookingWindow: 14,
-                workingHours: {
-                  monday: { start: '09:00', end: '17:00', enabled: true },
-                  tuesday: { start: '09:00', end: '17:00', enabled: true },
-                  wednesday: { start: '09:00', end: '17:00', enabled: true },
-                  thursday: { start: '09:00', end: '17:00', enabled: true },
-                  friday: { start: '09:00', end: '17:00', enabled: true },
-                  saturday: { start: '10:00', end: '16:00', enabled: false },
-                  sunday: { start: '10:00', end: '16:00', enabled: false },
-                },
-                smsReminders: true,
-                emailReminders: true,
-                googleCalendarSync: false,
-              },
-            };
-
-            await setDoc(doc(db, 'agents', result.user.uid), agentData);
-            console.log('[AuthContext] Agent document created');
-          } else {
-            console.log('[AuthContext] Agent document already exists');
-          }
-
-          // Fetch agent data
-          await fetchAgentData(result.user.uid);
-        } else {
-          console.log('[AuthContext] No redirect result found');
-        }
-      } catch (error: any) {
-        console.error('[AuthContext] Redirect result error:', error);
-        console.error('[AuthContext] Error code:', error.code);
-        console.error('[AuthContext] Error message:', error.message);
-        console.error('[AuthContext] Error stack:', error.stack);
-      }
-    }
-
-    handleRedirectResult();
 
     // Timeout fallback in case Firebase never initializes
     const timeout = setTimeout(() => {
@@ -248,9 +166,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signInWithGoogle() {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
-      // User will be redirected, then come back to the page
-      // The redirect result is handled in the useEffect hook
+      const result = await signInWithPopup(auth, provider);
+
+      // Check if agent document exists
+      const agentDoc = await getDoc(doc(db, 'agents', result.user.uid));
+
+      if (!agentDoc.exists()) {
+        console.log('[AuthContext] Creating new agent document...');
+        // New user - create agent document
+        const agentData: Omit<Agent, 'id'> = {
+          email: result.user.email!,
+          name: result.user.displayName || 'Agent',
+          phone: result.user.phoneNumber || '',
+          photoURL: result.user.photoURL || undefined,
+          subscriptionStatus: 'trial',
+          trialStartDate: new Date(),
+          trialShowingsCount: 0,
+          isFounderCustomer: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          settings: {
+            defaultShowingDuration: 30,
+            bufferTime: 15,
+            bookingWindow: 14,
+            workingHours: {
+              monday: { start: '09:00', end: '17:00', enabled: true },
+              tuesday: { start: '09:00', end: '17:00', enabled: true },
+              wednesday: { start: '09:00', end: '17:00', enabled: true },
+              thursday: { start: '09:00', end: '17:00', enabled: true },
+              friday: { start: '09:00', end: '17:00', enabled: true },
+              saturday: { start: '10:00', end: '16:00', enabled: false },
+              sunday: { start: '10:00', end: '16:00', enabled: false },
+            },
+            smsReminders: true,
+            emailReminders: true,
+            googleCalendarSync: false,
+          },
+        };
+
+        await setDoc(doc(db, 'agents', result.user.uid), agentData);
+        console.log('[AuthContext] Agent document created');
+      }
+
+      // Fetch agent data
+      await fetchAgentData(result.user.uid);
     } catch (error: any) {
       console.error('Google sign in error:', error);
       throw new Error(error.message || 'Failed to sign in with Google');
@@ -263,9 +222,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const provider = new OAuthProvider('apple.com');
       provider.addScope('email');
       provider.addScope('name');
-      await signInWithRedirect(auth, provider);
-      // User will be redirected, then come back to the page
-      // The redirect result is handled in the useEffect hook
+      const result = await signInWithPopup(auth, provider);
+
+      // Check if agent document exists
+      const agentDoc = await getDoc(doc(db, 'agents', result.user.uid));
+
+      if (!agentDoc.exists()) {
+        console.log('[AuthContext] Creating new agent document...');
+        // New user - create agent document
+        const agentData: Omit<Agent, 'id'> = {
+          email: result.user.email!,
+          name: result.user.displayName || 'Agent',
+          phone: result.user.phoneNumber || '',
+          photoURL: result.user.photoURL || undefined,
+          subscriptionStatus: 'trial',
+          trialStartDate: new Date(),
+          trialShowingsCount: 0,
+          isFounderCustomer: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          settings: {
+            defaultShowingDuration: 30,
+            bufferTime: 15,
+            bookingWindow: 14,
+            workingHours: {
+              monday: { start: '09:00', end: '17:00', enabled: true },
+              tuesday: { start: '09:00', end: '17:00', enabled: true },
+              wednesday: { start: '09:00', end: '17:00', enabled: true },
+              thursday: { start: '09:00', end: '17:00', enabled: true },
+              friday: { start: '09:00', end: '17:00', enabled: true },
+              saturday: { start: '10:00', end: '16:00', enabled: false },
+              sunday: { start: '10:00', end: '16:00', enabled: false },
+            },
+            smsReminders: true,
+            emailReminders: true,
+            googleCalendarSync: false,
+          },
+        };
+
+        await setDoc(doc(db, 'agents', result.user.uid), agentData);
+        console.log('[AuthContext] Agent document created');
+      }
+
+      // Fetch agent data
+      await fetchAgentData(result.user.uid);
     } catch (error: any) {
       console.error('Apple sign in error:', error);
       throw new Error(error.message || 'Failed to sign in with Apple');
