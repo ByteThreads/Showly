@@ -60,8 +60,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}>
           {/* Brand - Desktop Only */}
           <div className="hidden lg:block p-6 border-b border-gray-200">
-            <h1 className={cn(STYLES.text.h3, 'bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent font-bold')}>
-              {STRINGS.brand.name}
+            <h1 className="text-2xl font-bold">
+              <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent inline-block">
+                {STRINGS.brand.name}
+              </span>
             </h1>
             {agent && (
               <p className={cn(STYLES.text.small, 'mt-1')}>{agent.name}</p>

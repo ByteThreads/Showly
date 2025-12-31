@@ -19,6 +19,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Showly - Real Estate Showing Scheduler",
   description: "The Calendly for Real Estate Showings. Schedule property showings without the back-and-forth.",
+  icons: {
+    icon: '/logo.svg',
+    apple: '/logo.svg',
+  },
 };
 
 export default function RootLayout({
