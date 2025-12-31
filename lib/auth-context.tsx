@@ -86,8 +86,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Handle redirect result from OAuth sign-in
     async function handleRedirectResult() {
+      console.log('[AuthContext] Checking for redirect result...');
       try {
         const result = await getRedirectResult(auth);
+        console.log('[AuthContext] Redirect result:', result);
+
         if (result && result.user) {
           console.log('[AuthContext] Redirect result received for user:', result.user.uid);
 
@@ -95,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const agentDoc = await getDoc(doc(db, 'agents', result.user.uid));
 
           if (!agentDoc.exists()) {
+            console.log('[AuthContext] Creating new agent document...');
             // New user - create agent document
             const agentData: Omit<Agent, 'id'> = {
               email: result.user.email!,
@@ -127,13 +131,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
 
             await setDoc(doc(db, 'agents', result.user.uid), agentData);
+            console.log('[AuthContext] Agent document created');
+          } else {
+            console.log('[AuthContext] Agent document already exists');
           }
 
           // Fetch agent data
           await fetchAgentData(result.user.uid);
+        } else {
+          console.log('[AuthContext] No redirect result found');
         }
       } catch (error: any) {
         console.error('[AuthContext] Redirect result error:', error);
+        console.error('[AuthContext] Error code:', error.code);
+        console.error('[AuthContext] Error message:', error.message);
       }
     }
 
