@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     siteName: "Showly",
     images: [
       {
-        url: '/og-image.svg',
+        url: 'https://www.showly.io/og-image.svg',
         width: 1200,
         height: 630,
         alt: 'Showly - Real Estate Showing Scheduler',
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Showly - Real Estate Showing Scheduler",
     description: "Schedule property showings without the back-and-forth",
-    images: ['/og-image.svg'],
+    images: ['https://www.showly.io/og-image.svg'],
   },
 };
 
