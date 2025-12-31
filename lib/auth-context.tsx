@@ -87,12 +87,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Handle redirect result from OAuth sign-in
     async function handleRedirectResult() {
       console.log('[AuthContext] Checking for redirect result...');
+      console.log('[AuthContext] Current URL:', window.location.href);
+      console.log('[AuthContext] URL params:', window.location.search);
+
       try {
+        // Add a small delay to ensure Firebase is fully initialized
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         const result = await getRedirectResult(auth);
         console.log('[AuthContext] Redirect result:', result);
 
         if (result && result.user) {
           console.log('[AuthContext] Redirect result received for user:', result.user.uid);
+          console.log('[AuthContext] User email:', result.user.email);
+          console.log('[AuthContext] User name:', result.user.displayName);
 
           // Check if agent document exists
           const agentDoc = await getDoc(doc(db, 'agents', result.user.uid));
@@ -145,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('[AuthContext] Redirect result error:', error);
         console.error('[AuthContext] Error code:', error.code);
         console.error('[AuthContext] Error message:', error.message);
+        console.error('[AuthContext] Error stack:', error.stack);
       }
     }
 
