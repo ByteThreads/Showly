@@ -63,6 +63,11 @@ export const STRINGS = {
     profile: 'Edit Profile',
     billing: 'Billing',
     signOut: 'Sign out',
+    greetings: {
+      morning: 'Good morning',
+      afternoon: 'Good afternoon',
+      evening: 'Good evening',
+    },
     stats: {
       activeProperties: 'Active Properties',
       upcomingShowings: 'Upcoming Showings',

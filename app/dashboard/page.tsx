@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [weeklyData, setWeeklyData] = useState<{day: string; count: number}[]>([]);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -195,6 +196,29 @@ export default function DashboardPage() {
     }
   }, [pendingConfirmations, carouselIndex]);
 
+  // Auto-updating greeting based on time of day
+  useEffect(() => {
+    const updateGreeting = () => {
+      const hour = new Date().getHours();
+      if (hour < 12) {
+        setGreeting(STRINGS.dashboard.greetings.morning);
+      } else if (hour < 18) {
+        setGreeting(STRINGS.dashboard.greetings.afternoon);
+      } else {
+        setGreeting(STRINGS.dashboard.greetings.evening);
+      }
+    };
+
+    // Set initial greeting
+    updateGreeting();
+
+    // Update greeting every minute (60000ms)
+    const interval = setInterval(updateGreeting, 60000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, []);
+
   const handleDismissGettingStarted = () => {
     setShowGettingStarted(false);
     localStorage.setItem('gettingStartedDismissed', 'true');
@@ -225,13 +249,6 @@ export default function DashboardPage() {
     } finally {
       setConfirmingId(null);
     }
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
   };
 
   const stats = [
@@ -274,7 +291,7 @@ export default function DashboardPage() {
       {/* Personalized Greeting */}
       <div className="mb-8 bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
         <h1 className="text-3xl font-bold mb-2 text-gray-900">
-          {getGreeting()}, <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">{agent?.name?.split(' ')[0] || 'Agent'}</span>!
+          {greeting}, <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">{agent?.name?.split(' ')[0] || 'Agent'}</span>!
         </h1>
         {todayShowings > 0 ? (
           <button
