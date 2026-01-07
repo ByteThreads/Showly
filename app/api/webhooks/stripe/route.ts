@@ -96,13 +96,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Get founder number if this is a founder customer
   let founderNumber: number | undefined;
   if (isFounder) {
-    const agentsRef = collection(db, 'agents');
-    const founderQuery = query(
-      agentsRef,
-      where('isFounderCustomer', '==', true)
-    );
-    const founderSnapshot = await getDocs(founderQuery);
-    founderNumber = founderSnapshot.size + 1; // Next founder number
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/founder-spots`);
+      const data = await response.json();
+      founderNumber = (data.claimed || 0) + 1; // Next founder number
+    } catch (error) {
+      console.error('Error getting founder number:', error);
+      founderNumber = 1; // Default to 1 if check fails
+    }
   }
 
   // Update agent document with Stripe customer ID and founder status

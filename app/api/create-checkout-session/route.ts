@@ -31,21 +31,24 @@ export async function POST(request: NextRequest) {
     let isFounder = false;
 
     if (priceType === 'founder') {
-      // Check if there are still founder spots available
-      const agentsRef = collection(db, 'agents');
-      const founderQuery = query(
-        agentsRef,
-        where('isFounderCustomer', '==', true)
-      );
-      const founderSnapshot = await getDocs(founderQuery);
-      const founderCount = founderSnapshot.size;
+      // Check if there are still founder spots available via API
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const response = await fetch(`${baseUrl}/api/founder-spots`);
+        const data = await response.json();
 
-      if (founderCount < 200) {
+        if (data.available) {
+          priceId = STRIPE_PRICES.FOUNDER;
+          isFounder = true;
+        } else {
+          // No more founder spots, use standard
+          priceId = STRIPE_PRICES.STANDARD;
+        }
+      } catch (error) {
+        console.error('Error checking founder spots:', error);
+        // Default to allowing founder pricing if check fails
         priceId = STRIPE_PRICES.FOUNDER;
         isFounder = true;
-      } else {
-        // No more founder spots, use standard
-        priceId = STRIPE_PRICES.STANDARD;
       }
     } else {
       priceId = STRIPE_PRICES.STANDARD;

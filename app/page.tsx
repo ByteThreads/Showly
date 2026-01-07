@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { STRINGS } from '@/lib/constants/strings';
 import { useEffect, useState, useRef } from 'react';
 import { Link as LinkIcon, Calendar, Bell, Home, Clock, Mail, Smartphone, Palette } from 'lucide-react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 // Hero Rotating Cards Component
 function HeroRotatingCards() {
@@ -447,18 +445,16 @@ export default function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);
   const [founderSpotsRemaining, setFounderSpotsRemaining] = useState<number | null>(null);
 
-  // Check founder spots remaining
+  // Check founder spots remaining via API
   useEffect(() => {
     const checkFounderSpots = async () => {
       try {
-        const agentsRef = collection(db, 'agents');
-        const founderQuery = query(
-          agentsRef,
-          where('isFounderCustomer', '==', true)
-        );
-        const snapshot = await getDocs(founderQuery);
-        const remaining = Math.max(0, 200 - snapshot.size);
-        setFounderSpotsRemaining(remaining);
+        const response = await fetch('/api/founder-spots');
+        const data = await response.json();
+
+        if (data.remaining !== undefined) {
+          setFounderSpotsRemaining(data.remaining);
+        }
       } catch (error) {
         console.error('Error checking founder spots:', error);
         // Default to showing founder plan if error
