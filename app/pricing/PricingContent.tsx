@@ -5,8 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 export default function PricingContent() {
   const router = useRouter();
@@ -16,17 +14,20 @@ export default function PricingContent() {
   const [founderSpotsRemaining, setFounderSpotsRemaining] = useState<number | null>(200); // Start optimistically at 200
   const cancelled = searchParams?.get('cancelled') === 'true';
 
-  // Check founder spots remaining
+  // Check founder spots remaining via API
   useEffect(() => {
     const checkFounderSpots = async () => {
-      const agentsRef = collection(db, 'agents');
-      const founderQuery = query(
-        agentsRef,
-        where('isFounderCustomer', '==', true)
-      );
-      const snapshot = await getDocs(founderQuery);
-      const remaining = Math.max(0, 200 - snapshot.size);
-      setFounderSpotsRemaining(remaining);
+      try {
+        const response = await fetch('/api/founder-spots');
+        const data = await response.json();
+
+        if (data.remaining !== undefined) {
+          setFounderSpotsRemaining(data.remaining);
+        }
+      } catch (error) {
+        console.error('Error fetching founder spots:', error);
+        // Keep optimistic default of 200 on error
+      }
     };
 
     checkFounderSpots();
