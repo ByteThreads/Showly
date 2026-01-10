@@ -57,22 +57,22 @@ function HeroRotatingCards() {
               <div className="text-sm text-gray-600">Tuesday, Jan 15</div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <button className="bg-gray-100 hover:bg-blue-600 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
+              <button className="bg-gray-100 hover:bg-blue-600 text-gray-900 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
                 9:00 AM
               </button>
-              <button className="bg-gray-100 hover:bg-blue-600 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
+              <button className="bg-gray-100 hover:bg-blue-600 text-gray-900 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
                 10:30 AM
               </button>
               <button className="bg-blue-600 text-white border-2 border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold shadow-lg">
                 2:00 PM ✓
               </button>
-              <button className="bg-gray-100 hover:bg-blue-600 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
+              <button className="bg-gray-100 hover:bg-blue-600 text-gray-900 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
                 3:30 PM
               </button>
-              <button className="bg-gray-100 hover:bg-blue-600 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
+              <button className="bg-gray-100 hover:bg-blue-600 text-gray-900 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
                 4:00 PM
               </button>
-              <button className="bg-gray-100 hover:bg-blue-600 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
+              <button disabled className="bg-gray-300 text-gray-600 border-2 border-transparent rounded-lg px-4 py-3 text-sm font-semibold cursor-not-allowed opacity-60 line-through">
                 5:30 PM
               </button>
             </div>
@@ -288,16 +288,16 @@ function VerticalTimeline() {
               <div className="text-sm text-gray-600">Tuesday, Jan 15</div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <button className="bg-gray-100 hover:bg-blue-600 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
+              <button className="bg-gray-100 hover:bg-blue-600 text-gray-900 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
                 9:00 AM
               </button>
-              <button className="bg-gray-100 hover:bg-blue-600 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
+              <button className="bg-gray-100 hover:bg-blue-600 text-gray-900 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
                 10:00 AM
               </button>
               <button className="bg-blue-600 text-white border-2 border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold">
                 2:00 PM ✓
               </button>
-              <button className="bg-gray-100 hover:bg-blue-600 hover:text-white border-2 border-transparent hover:border-blue-600 rounded-lg px-4 py-3 text-sm font-semibold transition-all">
+              <button disabled className="bg-gray-300 text-gray-600 border-2 border-transparent rounded-lg px-4 py-3 text-sm font-semibold cursor-not-allowed opacity-60 line-through">
                 3:30 PM
               </button>
             </div>
