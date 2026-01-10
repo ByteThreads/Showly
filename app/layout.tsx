@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { AuthProvider } from "@/lib/auth-context";
+import { Providers } from "./providers";
 import { SmoothScroll } from "./smooth-scroll";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -57,14 +57,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
-        <SmoothScroll />
-        <AuthProvider>
+        <Providers>
+          <SmoothScroll />
           <Header />
           <main className="flex-1">
             {children}
           </main>
           <Footer />
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

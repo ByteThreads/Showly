@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context';
 import { db } from '@/lib/firebase';
+import { posthog } from '@/lib/posthog';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { STRINGS } from '@/lib/constants/strings';
@@ -211,6 +212,11 @@ export default function ShowingsPage() {
       sendStatusNotification('rescheduled', updatedShowing, oldDate).catch(err =>
         console.error('Failed to send reschedule email:', err)
       );
+
+      // Track feature discovery - reschedule
+      posthog.capture('feature_discovered_reschedule', {
+        days_between_old_and_new: Math.floor((selectedSlot.date.getTime() - oldDate.getTime()) / (1000 * 60 * 60 * 24)),
+      });
 
       // Close modal and reset
       setRescheduleModalOpen(false);

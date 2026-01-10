@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { posthog } from '@/lib/posthog';
 import { generateUniqueSlug } from '@/lib/utils/slug-generator';
 import { getTimezoneForState } from '@/lib/utils/timezone';
 import { uploadImage, validateImageFile } from '@/lib/utils/upload-image';
@@ -206,6 +207,25 @@ export default function NewPropertyPage() {
       }
 
       await addDoc(collection(db, 'properties'), propertyData);
+
+      // Track property creation
+      posthog.capture('property_created', {
+        property_price: propertyData.price,
+        property_bedrooms: propertyData.bedrooms,
+        property_bathrooms: propertyData.bathrooms,
+        property_state: propertyData.address.state,
+        has_photos: uploadedPhotoURLs.length > 0,
+        photo_count: uploadedPhotoURLs.length,
+        has_description: !!propertyData.description,
+        has_mls: !!propertyData.mlsNumber,
+      });
+
+      // Track feature discovery - photo upload
+      if (uploadedPhotoURLs.length > 0) {
+        posthog.capture('feature_discovered_photo_upload', {
+          photo_count: uploadedPhotoURLs.length,
+        });
+      }
 
       // Redirect to properties list
       router.push('/dashboard/properties');

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { collection, query, where, getDocs, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { posthog } from '@/lib/posthog';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 import type { Property } from '@/types/database';
@@ -23,6 +24,11 @@ export default function PropertiesPage() {
   useEffect(() => {
     async function fetchProperties() {
       if (!user) return;
+
+      // Track properties page view
+      posthog.capture('dashboard_section_viewed', {
+        section: 'properties',
+      });
 
       try {
         const q = query(
@@ -345,6 +351,14 @@ export default function PropertiesPage() {
                         navigator.clipboard.writeText(url);
                         setCopiedId(property.id);
                         setTimeout(() => setCopiedId(null), 2000);
+
+                        // Track booking link copied
+                        posthog.capture('booking_link_copied', {
+                          property_price: property.price,
+                          property_state: property.address.state,
+                          property_bedrooms: property.bedrooms,
+                          property_status: property.status,
+                        });
                       }}
                       className={cn(
                         'px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap',

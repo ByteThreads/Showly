@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { posthog } from '@/lib/posthog';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 
@@ -38,6 +39,12 @@ export default function PricingContent() {
       router.push('/login?redirect=/pricing');
       return;
     }
+
+    // Track trial start attempt
+    posthog.capture('trial_start_clicked', {
+      plan_type: priceType,
+      founder_spots_remaining: founderSpotsRemaining,
+    });
 
     setLoadingPlan(priceType);
 

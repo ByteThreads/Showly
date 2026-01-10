@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { db } from '@/lib/firebase';
+import { posthog } from '@/lib/posthog';
 import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
@@ -181,6 +182,26 @@ export default function SettingsPage() {
         'settings.emailBranding': emailBranding,
         updatedAt: Timestamp.now(),
       });
+
+      // Track settings update
+      const enabledDays = DAYS.filter(day => workingHours[day].enabled).length;
+      const hasCustomBranding = !!(brandLogo || footerText);
+      posthog.capture('settings_updated', {
+        showing_duration: defaultShowingDuration,
+        buffer_time: bufferTime,
+        booking_window: bookingWindow,
+        enabled_days_count: enabledDays,
+        has_custom_branding: hasCustomBranding,
+      });
+
+      // Track feature discovery - email branding
+      if (hasCustomBranding) {
+        posthog.capture('feature_discovered_email_branding', {
+          has_logo: !!brandLogo,
+          has_custom_footer: !!footerText,
+          has_custom_colors: primaryColor !== '#2563EB' || accentColor !== '#10B981',
+        });
+      }
 
       setMessage({ type: 'success', text: STRINGS.settings.saved });
 

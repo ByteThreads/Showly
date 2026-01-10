@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { posthog } from '@/lib/posthog';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 import { Home, Calendar, TrendingUp, Plus, ArrowRight, X, Sparkles, Clock, Bell, AlertCircle, Users, BarChart3, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -40,6 +41,11 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchDashboardData() {
       if (!agent) return;
+
+      // Track dashboard view
+      posthog.capture('dashboard_section_viewed', {
+        section: 'overview',
+      });
 
       try {
         const now = new Date();

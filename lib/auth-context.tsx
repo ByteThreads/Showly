@@ -18,6 +18,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { posthog } from './posthog';
 import type { Agent } from '@/types/database';
 
 interface AuthContextType {
@@ -91,8 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         console.log('[AuthContext] Fetching agent data for user:', user.uid);
         await fetchAgentData(user.uid);
+
+        // Identify user in PostHog
+        posthog.identify(user.uid, {
+          email: user.email || undefined,
+        });
       } else {
         setAgent(null);
+        // Reset PostHog on sign out
+        posthog.reset();
       }
 
       console.log('[AuthContext] Setting loading to false');
@@ -154,6 +162,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await setDoc(doc(db, 'agents', user.uid), agentData);
 
+      // Track signup
+      posthog.capture('user_signed_up', {
+        method: 'email',
+      });
+
       // Fetch the newly created agent data
       await fetchAgentData(user.uid);
     } catch (error: any) {
@@ -206,6 +219,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         await setDoc(doc(db, 'agents', result.user.uid), agentData);
         console.log('[AuthContext] Agent document created');
+
+        // Track signup for new users
+        posthog.capture('user_signed_up', {
+          method: 'google',
+        });
       }
 
       // Fetch agent data
@@ -262,6 +280,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         await setDoc(doc(db, 'agents', result.user.uid), agentData);
         console.log('[AuthContext] Agent document created');
+
+        // Track signup for new users
+        posthog.capture('user_signed_up', {
+          method: 'apple',
+        });
       }
 
       // Fetch agent data

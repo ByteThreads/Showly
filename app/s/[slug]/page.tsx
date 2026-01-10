@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { collection, query, where, getDocs, addDoc, Timestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { posthog } from '@/lib/posthog';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 import { generateTimeSlots, countShowingsThisWeek, type TimeSlot } from '@/lib/utils/time-slots';
@@ -42,6 +43,22 @@ export default function BookingPage() {
     wantsSMS: false, // Default to false - explicit SMS consent required for TCPA compliance
   });
 
+  // Track booking funnel drop-off on page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Only track if they selected a time but didn't complete booking
+      if (selectedSlot && !success) {
+        posthog.capture('booking_form_abandoned', {
+          had_time_selected: true,
+          had_form_filled: !!(formData.name || formData.email || formData.phone),
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [selectedSlot, success, formData]);
+
   // Fetch property and agent data
   useEffect(() => {
     let isMounted = true;
@@ -78,6 +95,13 @@ export default function BookingPage() {
 
         if (!isMounted) return;
         setProperty(propertyData);
+
+        // Track booking page view
+        posthog.capture('booking_page_viewed', {
+          property_price: propertyData.price,
+          property_bedrooms: propertyData.bedrooms,
+          property_state: propertyData.address.state,
+        });
 
         // Fetch agent data
         console.log('Fetching agent:', propertyData.agentId);
@@ -408,6 +432,19 @@ export default function BookingPage() {
         }
       }
 
+      // Track successful booking
+      posthog.capture('showing_booked', {
+        property_price: property.price,
+        property_bedrooms: property.bedrooms,
+        property_state: property.address.state,
+        has_notes: !!formData.notes,
+        pre_approved: formData.preApproved,
+        wants_reminders: formData.wantsReminders,
+        wants_sms: formData.wantsSMS,
+        agent_on_trial: agent.subscriptionStatus === 'trial',
+        trial_showings_count: agent.trialShowingsCount || 0,
+      });
+
       setSuccess(true);
     } catch (err) {
       console.error('Error creating showing:', err);
@@ -420,6 +457,11 @@ export default function BookingPage() {
   // Add to calendar handler
   function handleAddToCalendar() {
     if (!selectedSlot || !property || !agent) return;
+
+    // Track add to calendar event
+    posthog.capture('add_to_calendar_clicked', {
+      property_state: property.address.state,
+    });
 
     // Calculate end time (start time + showing duration)
     const endTime = new Date(selectedSlot.date.getTime() + (property.showingDuration * 60 * 1000));
@@ -1056,7 +1098,14 @@ export default function BookingPage() {
                                 key={index}
                                 type="button"
                                 disabled={!slot.available}
-                                onClick={() => setSelectedSlot(slot)}
+                                onClick={() => {
+                                  setSelectedSlot(slot);
+                                  // Track time slot selection
+                                  posthog.capture('time_slot_selected', {
+                                    day_of_week: slot.date.toLocaleDateString('en-US', { weekday: 'long' }),
+                                    time: slot.time,
+                                  });
+                                }}
                                 className={cn(
                                   'px-4 py-3 rounded-lg text-sm font-medium transition-all',
                                   !slot.available && 'bg-gray-100 text-gray-400 cursor-not-allowed',
