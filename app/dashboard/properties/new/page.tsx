@@ -348,7 +348,7 @@ export default function NewPropertyPage() {
                     type="number"
                     required
                     min="0"
-                    step="1000"
+                    step="1"
                     value={formData.price}
                     onChange={handleChange}
                     className={cn(STYLES.input.base, STYLES.input.default, 'pl-7')}
