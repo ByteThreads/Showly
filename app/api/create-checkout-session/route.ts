@@ -1,30 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, STRIPE_PRICES } from '@/lib/stripe';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
-import type { Agent } from '@/types/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { agentId, priceType } = await request.json();
+    const { agentId, agentEmail, agentName, stripeCustomerId, priceType } = await request.json();
 
-    if (!agentId) {
+    if (!agentId || !agentEmail || !agentName) {
       return NextResponse.json(
-        { error: 'Agent ID is required' },
+        { error: 'Agent information is required' },
         { status: 400 }
       );
     }
-
-    // Get agent document
-    const agentDoc = await getDoc(doc(db, 'agents', agentId));
-    if (!agentDoc.exists()) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
-
-    const agent = { id: agentDoc.id, ...agentDoc.data() } as Agent;
 
     // Determine which price to use
     let priceId: string;
@@ -55,14 +41,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or get Stripe customer
-    let customerId = agent.stripeCustomerId;
+    let customerId = stripeCustomerId;
 
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: agent.email,
-        name: agent.name,
+        email: agentEmail,
+        name: agentName,
         metadata: {
-          agentId: agent.id,
+          agentId: agentId,
         },
       });
       customerId = customer.id;
@@ -98,12 +84,12 @@ export async function POST(request: NextRequest) {
           ? 'Showly Founder Plan - Lock in $29/mo forever'
           : 'Showly Pro Plan - $39/mo',
         metadata: {
-          agentId: agent.id,
+          agentId: agentId,
           isFounder: isFounder.toString(),
         },
       },
       metadata: {
-        agentId: agent.id,
+        agentId: agentId,
         isFounder: isFounder.toString(),
       },
     });

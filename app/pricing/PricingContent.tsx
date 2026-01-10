@@ -48,6 +48,9 @@ export default function PricingContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           agentId: agent.id,
+          agentEmail: agent.email,
+          agentName: agent.name,
+          stripeCustomerId: agent.stripeCustomerId,
           priceType,
         }),
       });
