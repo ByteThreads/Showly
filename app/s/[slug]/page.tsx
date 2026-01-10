@@ -175,8 +175,8 @@ export default function BookingPage() {
         ? property.photos
         : property.photoURL
           ? [property.photoURL]
-          : [])
-    : [];
+          : ['/property-placeholder.svg'])
+    : ['/property-placeholder.svg'];
 
   const calendarDays = currentMonth ? getDaysInMonth(currentMonth) : [];
 

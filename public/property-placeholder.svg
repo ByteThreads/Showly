@@ -1,0 +1,25 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <rect width="1200" height="800" fill="url(#gradient)"/>
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="1200" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#EFF6FF"/>
+      <stop offset="100%" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+
+  <!-- House icon (centered and larger) -->
+  <g transform="translate(400, 200)">
+    <!-- Roof -->
+    <path d="M200 80 L400 220 L0 220 Z" fill="#2563EB" opacity="0.9"/>
+    <!-- House body -->
+    <rect x="30" y="220" width="340" height="280" fill="#3B82F6" opacity="0.8"/>
+    <!-- Door -->
+    <rect x="155" y="340" width="90" height="160" fill="#1E40AF" opacity="0.9"/>
+    <!-- Windows -->
+    <rect x="70" y="270" width="80" height="80" fill="#DBEAFE"/>
+    <rect x="250" y="270" width="80" height="80" fill="#DBEAFE"/>
+    <!-- Doorknob -->
+    <circle cx="225" cy="420" r="7" fill="#93C5FD"/>
+  </g>
+</svg>

@@ -269,17 +269,11 @@ export default function PropertiesPage() {
           {filteredAndSortedProperties.map((property) => (
             <div key={property.id} className={STYLES.card.hover}>
               {/* Property Image */}
-              {property.photoURL ? (
-                <img
-                  src={property.photoURL}
-                  alt={property.address.formatted}
-                  className="w-full h-48 object-cover rounded-lg mb-4"
-                />
-              ) : (
-                <div className="w-full h-48 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                  <Home className="w-16 h-16 text-gray-400" />
-                </div>
-              )}
+              <img
+                src={property.photoURL || '/property-placeholder.svg'}
+                alt={property.address.formatted}
+                className="w-full h-48 object-cover rounded-lg mb-4"
+              />
 
               {/* Property Details */}
               <div>

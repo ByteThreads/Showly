@@ -37,7 +37,6 @@ export default function NewPropertyPage() {
     sqft: '',
     description: '',
     mlsNumber: '',
-    photoURL: '',
   });
 
   // Google Places autocomplete
@@ -158,11 +157,6 @@ export default function NewPropertyPage() {
         } finally {
           setUploading(false);
         }
-      }
-
-      // Add URL from input field if provided (and no files uploaded)
-      if (formData.photoURL && uploadedPhotoURLs.length === 0) {
-        uploadedPhotoURLs.push(formData.photoURL);
       }
 
       // Generate unique booking slug
@@ -542,24 +536,6 @@ export default function NewPropertyPage() {
                       JPG, PNG, or WebP (max 5MB each). Select multiple files to upload at once.
                     </p>
                   </div>
-
-                  {/* URL Input */}
-                  {photoFiles.length === 0 && (
-                    <div>
-                      <label htmlFor="photoURL" className={cn(STYLES.text.small, 'block mb-2')}>
-                        {STRINGS.properties.form.photoOrUrl}
-                      </label>
-                      <input
-                        id="photoURL"
-                        name="photoURL"
-                        type="url"
-                        value={formData.photoURL}
-                        onChange={handleChange}
-                        className={cn(STYLES.input.base, STYLES.input.default)}
-                        placeholder={STRINGS.properties.form.photoPlaceholder}
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
