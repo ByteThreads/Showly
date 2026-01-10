@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.showly.io'),
   title: "Showly - Real Estate Showing Scheduler",
   description: "The Calendly for Real Estate Showings. Schedule property showings without the back-and-forth.",
   icons: {
