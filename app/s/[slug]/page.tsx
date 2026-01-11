@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { collection, query, where, getDocs, addDoc, Timestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -120,9 +120,14 @@ export default function BookingPage() {
           return;
         }
 
-        // Fetch existing showings for this property
+        // Fetch ALL showings for this agent (not just this property)
+        // This prevents double-booking across different properties
         const showingsRef = collection(db, 'showings');
-        const showingsQuery = query(showingsRef, where('propertyId', '==', propertyDoc.id));
+        const showingsQuery = query(
+          showingsRef,
+          where('agentId', '==', propertyData.agentId),
+          where('status', 'in', ['pending', 'confirmed'])
+        );
         const showingsSnapshot = await getDocs(showingsQuery);
 
         if (!isMounted) return;
@@ -131,7 +136,6 @@ export default function BookingPage() {
           id: doc.id,
           ...doc.data(),
         })) as Showing[];
-        console.log('Showings found:', showingsData.length);
         setShowings(showingsData);
 
         setLoading(false);
@@ -152,15 +156,17 @@ export default function BookingPage() {
     };
   }, [slug]);
 
-  // Generate available time slots
-  const allTimeSlots = agent && property
-    ? generateTimeSlots(
-        agent,
-        showings,
-        property.showingDuration,
-        property.bufferTime
-      )
-    : [];
+  // Generate available time slots (recalculate when showings change)
+  const allTimeSlots = useMemo(() => {
+    if (!agent || !property) return [];
+
+    return generateTimeSlots(
+      agent,
+      showings,
+      property.showingDuration,
+      property.bufferTime
+    );
+  }, [agent, property, showings]);
 
   // Filter time slots by selected date if one is chosen
   const timeSlots = selectedDate

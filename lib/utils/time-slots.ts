@@ -33,12 +33,13 @@ export function generateTimeSlots(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  console.log('Generating time slots:', {
-    effectiveDaysAhead,
-    showingDuration,
-    bufferTime,
-    agentWorkingHours: agent?.settings?.workingHours
-  });
+  // console.log('Generating time slots:', {
+  //   effectiveDaysAhead,
+  //   showingDuration,
+  //   bufferTime,
+  //   agentWorkingHours: agent?.settings?.workingHours,
+  //   existingShowingsCount: existingShowings.length,
+  // });
 
   // Generate slots for each day
   for (let dayOffset = 0; dayOffset < effectiveDaysAhead; dayOffset++) {
@@ -108,14 +109,18 @@ function generateSlotsForDay(
     // Check if slot is in the past
     const isPast = currentSlot < now;
 
-    // Check if slot conflicts with existing showing
+    // Check if slot conflicts with existing showing (including buffer time)
     const hasConflict = existingShowings.some(showing => {
       const showingStart = showing.scheduledAt.toDate();
-      const showingEnd = new Date(showingStart.getTime() + (showingDuration * 60 * 1000));
+      // Include buffer time in the conflict window
+      const showingEnd = new Date(showingStart.getTime() + (slotDuration * 60 * 1000));
+      const currentSlotEnd = new Date(currentSlot.getTime() + (slotDuration * 60 * 1000));
 
+      // Check for any overlap between current slot and existing showing
       return (
-        currentSlot >= showingStart && currentSlot < showingEnd ||
-        currentSlot.getTime() === showingStart.getTime()
+        (currentSlot >= showingStart && currentSlot < showingEnd) ||
+        (currentSlotEnd > showingStart && currentSlotEnd <= showingEnd) ||
+        (currentSlot <= showingStart && currentSlotEnd >= showingEnd)
       );
     });
 
