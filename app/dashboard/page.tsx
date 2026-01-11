@@ -264,6 +264,7 @@ export default function DashboardPage() {
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       icon: Home,
+      href: '/dashboard/properties',
     },
     {
       label: STRINGS.dashboard.stats.upcomingShowings,
@@ -271,6 +272,7 @@ export default function DashboardPage() {
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       icon: Calendar,
+      href: '/dashboard/showings?filter=upcoming',
     },
     {
       label: STRINGS.dashboard.stats.thisMonth,
@@ -278,6 +280,7 @@ export default function DashboardPage() {
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       icon: TrendingUp,
+      href: '/dashboard/showings?filter=this-month',
     },
   ];
 
@@ -320,18 +323,19 @@ export default function DashboardPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div
+            <Link
               key={stat.label}
-              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-100"
+              href={stat.href}
+              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-gray-300 cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={cn('p-3 rounded-xl', stat.bgColor)}>
+                <div className={cn('p-3 rounded-xl transition-transform group-hover:scale-110', stat.bgColor)}>
                   <Icon className={cn('w-6 h-6', stat.color)} />
                 </div>
-                <span className="text-4xl font-bold text-gray-900">{stat.value}</span>
+                <span className="text-4xl font-bold text-gray-900 group-hover:scale-105 transition-transform">{stat.value}</span>
               </div>
-              <p className="text-gray-600 font-medium">{stat.label}</p>
-            </div>
+              <p className="text-gray-600 font-medium group-hover:text-gray-900 transition-colors">{stat.label}</p>
+            </Link>
           );
         })}
       </div>

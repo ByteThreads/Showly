@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import { posthog } from '@/lib/posthog';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 import type { ShowingStatus, Agent, Property } from '@/types/database';
@@ -36,9 +37,16 @@ type SortOption = 'date-desc' | 'date-asc' | 'property' | 'client' | 'status';
 
 export default function ShowingsPage() {
   const { agent } = useAuth();
+  const searchParams = useSearchParams();
   const [showings, setShowings] = useState<ShowingData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('all');
+
+  // Read initial filter from URL parameter (default to 'upcoming')
+  const initialFilter = searchParams.get('filter');
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'past' | 'this-month'>(
+    initialFilter === 'all' || initialFilter === 'past' || initialFilter === 'this-month' ? initialFilter : 'upcoming'
+  );
+
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -108,6 +116,10 @@ export default function ShowingsPage() {
         return showingDate >= now;
       } else if (filter === 'past') {
         return showingDate < now;
+      } else if (filter === 'this-month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        return showingDate >= startOfMonth && showingDate <= endOfMonth;
       }
       return true; // 'all'
     })
