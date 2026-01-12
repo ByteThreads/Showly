@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { collection, query, where, getDocs, orderBy, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { posthog } from '@/lib/posthog';
 import { STRINGS } from '@/lib/constants/strings';
@@ -39,48 +39,55 @@ export default function DashboardPage() {
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
-    async function fetchDashboardData() {
-      if (!agent) return;
+    if (!agent) return;
 
-      // Track dashboard view
-      posthog.capture('dashboard_section_viewed', {
-        section: 'overview',
+    // Track dashboard view
+    posthog.capture('dashboard_section_viewed', {
+      section: 'overview',
+    });
+
+    let allProperties: Property[] = [];
+
+    // Set up real-time listener for properties
+    const propertiesQuery = query(
+      collection(db, 'properties'),
+      where('agentId', '==', agent.id)
+    );
+
+    const unsubscribeProperties = onSnapshot(propertiesQuery, (propertiesSnapshot) => {
+      allProperties = propertiesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Property[];
+
+      const activeProps = allProperties.filter(p => p.status === 'active');
+      setActiveProperties(activeProps.length);
+
+      const sevenDaysAgo = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000));
+      const propertiesWithRecentShowings = new Set<string>();
+      // This will be populated by the showings listener
+    });
+
+    // Set up real-time listener for showings (independent from properties)
+    const showingsQuery = query(
+      collection(db, 'showings'),
+      where('agentId', '==', agent.id),
+      orderBy('scheduledAt', 'asc')
+    );
+
+    const unsubscribeShowings = onSnapshot(showingsQuery, (showingsSnapshot) => {
+      const showingsData: ShowingWithProperty[] = showingsSnapshot.docs.map(doc => {
+        const showing = { id: doc.id, ...doc.data() } as Showing;
+        const property = allProperties.find(p => p.id === showing.propertyId);
+        return { ...showing, property };
       });
 
-      try {
-        const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
-        const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-
-        // Fetch all properties
-        const propertiesQuery = query(
-          collection(db, 'properties'),
-          where('agentId', '==', agent.id)
-        );
-        const propertiesSnapshot = await getDocs(propertiesQuery);
-        const allProperties = propertiesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Property[];
-
-        const activeProps = allProperties.filter(p => p.status === 'active');
-        setActiveProperties(activeProps.length);
-
-        // Fetch all showings for this agent
-        const showingsQuery = query(
-          collection(db, 'showings'),
-          where('agentId', '==', agent.id),
-          orderBy('scheduledAt', 'asc')
-        );
-        const showingsSnapshot = await getDocs(showingsQuery);
-        const showingsData: ShowingWithProperty[] = showingsSnapshot.docs.map(doc => {
-          const showing = { id: doc.id, ...doc.data() } as Showing;
-          const property = allProperties.find(p => p.id === showing.propertyId);
-          return { ...showing, property };
-        });
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+      const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
         // Calculate stats
         const todayList = showingsData.filter(s => {
@@ -113,6 +120,7 @@ export default function DashboardPage() {
             .filter(s => s.scheduledAt.toDate() >= sevenDaysAgo)
             .map(s => s.propertyId)
         );
+        const activeProps = allProperties.filter(p => p.status === 'active');
         const needsAttentionList = activeProps
           .filter(p => !propertiesWithRecentShowings.has(p.id))
           .slice(0, 3);
@@ -177,14 +185,14 @@ export default function DashboardPage() {
         }
         setWeeklyData(weeklyStats);
 
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
         setLoading(false);
-      }
-    }
+      });
 
-    fetchDashboardData();
+    // Cleanup function: unsubscribe from listeners when component unmounts
+    return () => {
+      unsubscribeProperties();
+      unsubscribeShowings();
+    };
   }, [agent]);
 
   // Check localStorage for getting started preference
@@ -234,6 +242,12 @@ export default function DashboardPage() {
     try {
       setConfirmingId(showingId);
 
+      // Get the showing details before updating
+      const showing = pendingConfirmations.find(s => s.id === showingId);
+      if (!showing) {
+        throw new Error('Showing not found');
+      }
+
       const showingRef = doc(db, 'showings', showingId);
       await updateDoc(showingRef, {
         status: 'confirmed',
@@ -246,8 +260,38 @@ export default function DashboardPage() {
         s.id === showingId ? { ...s, status: 'confirmed' as const } : s
       ));
 
-      // Optional: Send confirmation notification email
-      // You could add this later
+      // Send confirmation notification email
+      try {
+        await fetch('/api/send-status-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'confirmed',
+            clientEmail: showing.clientEmail,
+            clientName: showing.clientName,
+            agentName: agent?.name,
+            agentEmail: agent?.email,
+            agentPhone: agent?.phone,
+            propertyAddress: showing.property?.address.formatted || showing.property?.address.street || 'Property',
+            showingDate: showing.scheduledAt.toDate().toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            }),
+            showingTime: showing.scheduledAt.toDate().toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            }),
+            emailBranding: agent?.settings.emailBranding,
+          }),
+        });
+        console.log('Confirmation email sent successfully!');
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the confirmation if email fails
+      }
 
     } catch (error) {
       console.error('Error confirming showing:', error);

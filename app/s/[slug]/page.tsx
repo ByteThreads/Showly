@@ -122,11 +122,12 @@ export default function BookingPage() {
 
         // Fetch ALL showings for this agent (not just this property)
         // This prevents double-booking across different properties
+        // Block slots for 'scheduled' (pending confirmation) and 'confirmed' showings
         const showingsRef = collection(db, 'showings');
         const showingsQuery = query(
           showingsRef,
           where('agentId', '==', propertyData.agentId),
-          where('status', 'in', ['pending', 'confirmed'])
+          where('status', 'in', ['scheduled', 'confirmed'])
         );
         const showingsSnapshot = await getDocs(showingsQuery);
 

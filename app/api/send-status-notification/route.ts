@@ -52,6 +52,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Send email to client
+    console.log('Sending status notification email:', {
+      type,
+      from: 'Showly <noreply@bytethreadsllc.com>',
+      to: clientEmail,
+      subject: emailContent.subject,
+    });
+
     const clientEmailResult = await resend.emails.send({
       from: 'Showly <noreply@bytethreadsllc.com>',
       to: clientEmail,
@@ -60,6 +67,8 @@ export async function POST(request: NextRequest) {
       text: emailContent.text,
       html: emailContent.html,
     });
+
+    console.log('Email sent successfully! Resend ID:', clientEmailResult.data?.id);
 
     return NextResponse.json({
       success: true,

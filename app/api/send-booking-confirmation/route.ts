@@ -30,26 +30,24 @@ export async function POST(request: NextRequest) {
       from: 'Showly <noreply@bytethreadsllc.com>',
       to: to,
       replyTo: agentEmail, // Allows client to reply directly to agent
-      subject: `Your Property Showing is Confirmed - ${propertyAddress}`,
+      subject: `Showing Request Received - ${propertyAddress}`,
       text: `Hi ${clientName},
 
-Your showing has been confirmed!
+Thank you for requesting a showing! Your request has been submitted and is awaiting confirmation from ${agentName}.
 
 Property: ${propertyAddress}
-Date: ${showingDate}
-Time: ${showingTime}
+Requested Date: ${showingDate}
+Requested Time: ${showingTime}
+
+What happens next:
+${agentName} will review your request and confirm your appointment shortly. You'll receive another email once your showing is confirmed.
 
 Your Agent:
 ${agentName}
 ${agentEmail}
 ${agentPhone}
 
-What to bring:
-- Valid photo ID
-- Pre-approval letter (if applicable)
-- Any questions you have about the property
-
-If you need to reschedule, please contact ${agentName} directly.
+If you have any questions or need to make changes, please contact ${agentName} directly.
 
 Thank you,
 Showly`,
@@ -75,18 +73,23 @@ Showly`,
             <div class="container">
               <div class="header">
                 ${brandLogo ? `<img src="${brandLogo}" alt="Logo" class="logo" />` : ''}
-                <h1 style="margin: 0;">Showing Confirmed!</h1>
+                <h1 style="margin: 0;">📋 Showing Request Received</h1>
               </div>
               <div class="content">
                 <p>Hi ${clientName},</p>
-                <p>Your showing has been confirmed. We're excited to show you this property!</p>
+                <p>Thank you for requesting a showing! Your request has been submitted and is <strong>awaiting confirmation</strong> from ${agentName}.</p>
 
                 <div class="property">
                   <h2 style="margin-top: 0; color: #1f2937;">📍 ${propertyAddress}</h2>
                   <div class="details">
-                    <strong>📅 Date:</strong> ${showingDate}<br>
-                    <strong>🕐 Time:</strong> ${showingTime}
+                    <strong>📅 Requested Date:</strong> ${showingDate}<br>
+                    <strong>🕐 Requested Time:</strong> ${showingTime}
                   </div>
+                </div>
+
+                <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 16px; border-radius: 4px; margin: 20px 0;">
+                  <p style="margin: 0; color: #92400E;"><strong>⏳ What happens next:</strong></p>
+                  <p style="margin: 8px 0 0 0; color: #92400E;">${agentName} will review your request and confirm your appointment shortly. <strong>You'll receive another email once your showing is confirmed.</strong></p>
                 </div>
 
                 <h3>Your Agent</h3>
@@ -96,14 +99,7 @@ Showly`,
                   <strong>Phone:</strong> <a href="tel:${agentPhone}" style="color: ${accentColor};">${agentPhone}</a>
                 </div>
 
-                <p><strong>What to bring:</strong></p>
-                <ul>
-                  <li>Valid photo ID</li>
-                  <li>Pre-approval letter (if applicable)</li>
-                  <li>Any questions you have about the property</li>
-                </ul>
-
-                <p>If you need to reschedule or have any questions, please contact ${agentName} directly.</p>
+                <p>If you have any questions or need to make changes, please contact ${agentName} directly.</p>
 
                 <div class="footer">
                   ${footerText ? `<p class="custom-footer">${footerText}</p>` : ''}
@@ -122,20 +118,20 @@ Showly`,
       from: 'Showly <noreply@bytethreadsllc.com>',
       to: agentEmail,
       replyTo: to, // Allows agent to reply directly to client
-      subject: `New Showing Booked: ${propertyAddress}`,
+      subject: `New Showing Request: ${propertyAddress}`,
       text: `Hi ${agentName},
 
-You have a new showing scheduled!
+You have a new showing request that needs confirmation!
 
 Property: ${propertyAddress}
-Date: ${showingDate}
-Time: ${showingTime}
+Requested Date: ${showingDate}
+Requested Time: ${showingTime}
 
 Client Information:
 Name: ${clientName}
 Email: ${to}
 
-The client has been sent a confirmation email with your contact information.
+ACTION REQUIRED: Please review and confirm this showing in your dashboard. The client will receive a confirmation email once you approve it.
 
 Manage your showings at your dashboard.
 
@@ -161,17 +157,17 @@ Showly`,
             <div class="container">
               <div class="header">
                 ${brandLogo ? `<img src="${brandLogo}" alt="Logo" class="logo" />` : ''}
-                <h1 style="margin: 0;">🎉 New Showing Booked!</h1>
+                <h1 style="margin: 0;">🔔 New Showing Request</h1>
               </div>
               <div class="content">
                 <p>Hi ${agentName},</p>
-                <p>You have a new showing scheduled:</p>
+                <p>You have a new showing request that <strong>needs confirmation</strong>!</p>
 
                 <div class="property">
                   <h2 style="margin-top: 0; color: #1f2937;">📍 ${propertyAddress}</h2>
                   <div class="details">
-                    <strong>📅 Date:</strong> ${showingDate}<br>
-                    <strong>🕐 Time:</strong> ${showingTime}
+                    <strong>📅 Requested Date:</strong> ${showingDate}<br>
+                    <strong>🕐 Requested Time:</strong> ${showingTime}
                   </div>
                 </div>
 
@@ -181,7 +177,10 @@ Showly`,
                   <strong>Email:</strong> <a href="mailto:${to}" style="color: ${accentColor};">${to}</a>
                 </div>
 
-                <p>The client has been sent a confirmation email with your contact information.</p>
+                <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 16px; border-radius: 4px; margin: 20px 0;">
+                  <p style="margin: 0; color: #92400E;"><strong>⚡ ACTION REQUIRED:</strong></p>
+                  <p style="margin: 8px 0 0 0; color: #92400E;">Please review and confirm this showing in your dashboard. The client will receive a confirmation email once you approve it.</p>
+                </div>
 
                 <div class="footer">
                   ${footerText ? `<p class="custom-footer">${footerText}</p>` : ''}

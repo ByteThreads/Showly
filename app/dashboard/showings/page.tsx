@@ -268,9 +268,15 @@ export default function ShowingsPage() {
 
       // Send email notification (non-blocking)
       if (newStatus === 'confirmed' || newStatus === 'cancelled' || newStatus === 'completed') {
-        sendStatusNotification(newStatus, showing).catch(err =>
-          console.error('Failed to send email notification:', err)
-        );
+        console.log('Sending status notification email:', newStatus, showing);
+        sendStatusNotification(newStatus, showing)
+          .then(() => {
+            console.log('Email notification sent successfully!');
+            if (newStatus === 'confirmed') {
+              alert('Showing confirmed! Confirmation email sent to client.');
+            }
+          })
+          .catch(err => console.error('Failed to send email notification:', err));
       }
     } catch (error) {
       console.error('Error updating showing status:', error);
@@ -287,7 +293,14 @@ export default function ShowingsPage() {
     oldDate?: Date
   ) {
     try {
-      await fetch('/api/send-status-notification', {
+      console.log('sendStatusNotification called with:', {
+        type,
+        clientEmail: showing.clientEmail,
+        propertyAddress: showing.propertyAddress,
+        agentName: agent?.name,
+      });
+
+      const response = await fetch('/api/send-status-notification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -325,6 +338,15 @@ export default function ShowingsPage() {
           emailBranding: agent?.settings.emailBranding,
         }),
       });
+
+      const data = await response.json();
+      console.log('Email API response:', data);
+
+      if (!response.ok) {
+        console.error('Email API error:', data);
+      } else {
+        console.log('Email sent successfully!');
+      }
     } catch (error) {
       console.error('Error sending notification:', error);
       // Don't throw - email failure shouldn't block the status update
