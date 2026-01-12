@@ -78,6 +78,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log('[AuthContext] Setting up auth listener...');
 
+    // Clear stale auth data if app version changed
+    const APP_VERSION = '1.0.1'; // Increment this when auth changes are deployed
+    const storedVersion = localStorage.getItem('app_version');
+
+    if (storedVersion !== APP_VERSION) {
+      console.log('[AuthContext] App version changed, clearing stale auth data...');
+      // Clear all IndexedDB databases used by Firebase
+      if (typeof indexedDB !== 'undefined') {
+        indexedDB.databases?.().then(databases => {
+          databases.forEach(db => {
+            if (db.name?.includes('firebase')) {
+              console.log('[AuthContext] Deleting Firebase database:', db.name);
+              indexedDB.deleteDatabase(db.name);
+            }
+          });
+        });
+      }
+      // Clear localStorage items
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('firebase:')) {
+          localStorage.removeItem(key);
+        }
+      });
+      localStorage.setItem('app_version', APP_VERSION);
+      console.log('[AuthContext] Stale auth data cleared, version updated to', APP_VERSION);
+    }
+
     // Timeout fallback in case Firebase never initializes
     const timeout = setTimeout(() => {
       console.error('[AuthContext] Firebase auth timeout - forcing loading to false');
