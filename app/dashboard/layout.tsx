@@ -17,6 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { name: STRINGS.dashboard.overview, href: '/dashboard', icon: LayoutDashboard },
+    { name: STRINGS.dashboard.calendar, href: '/dashboard/calendar', icon: Calendar },
     { name: STRINGS.dashboard.properties, href: '/dashboard/properties', icon: Home },
     { name: STRINGS.dashboard.showings, href: '/dashboard/showings', icon: Calendar },
     { name: STRINGS.dashboard.billing, href: '/dashboard/billing', icon: CreditCard },

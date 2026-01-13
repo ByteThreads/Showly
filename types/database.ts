@@ -87,8 +87,10 @@ export interface Property {
   photoURL?: string; // Legacy: first photo URL (kept for backward compatibility)
   photos?: string[]; // Array of photo URLs in display order
   mlsNumber?: string;
-  showingDuration: number;
-  bufferTime: number;
+  // Note: showingDuration and bufferTime are now global settings from agent.settings
+  // Legacy properties may still have these fields, but they are ignored
+  showingDuration?: number; // Legacy field - no longer used
+  bufferTime?: number; // Legacy field - no longer used
   status: PropertyStatus;
   bookingSlug: string;
   isBookingEnabled: boolean;

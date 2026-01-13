@@ -57,6 +57,7 @@ export const STRINGS = {
     welcomeMessage: 'Welcome back',
     subtitle: 'Manage your properties and showings from one place',
     overview: 'Overview',
+    calendar: 'Calendar',
     properties: 'Properties',
     showings: 'Showings',
     settings: 'Settings',

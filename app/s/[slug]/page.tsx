@@ -164,8 +164,8 @@ export default function BookingPage() {
     return generateTimeSlots(
       agent,
       showings,
-      property.showingDuration,
-      property.bufferTime
+      agent.settings.defaultShowingDuration, // Use agent's global setting
+      agent.settings.bufferTime // Use agent's global setting
     );
   }, [agent, property, showings]);
 
@@ -361,6 +361,7 @@ export default function BookingPage() {
         clientEmail: formData.email,
         clientPhone: formData.phone,
         scheduledAt: Timestamp.fromDate(selectedSlot.date),
+        duration: agent.settings.defaultShowingDuration, // Duration in minutes from agent settings
         status: 'scheduled' as const,
         notes: formData.notes || null,
         preApproved: formData.preApproved,
@@ -471,7 +472,7 @@ export default function BookingPage() {
     });
 
     // Calculate end time (start time + showing duration)
-    const endTime = new Date(selectedSlot.date.getTime() + (property.showingDuration * 60 * 1000));
+    const endTime = new Date(selectedSlot.date.getTime() + (agent.settings.defaultShowingDuration * 60 * 1000));
 
     const icsContent = generateCalendarEvent({
       title: `Property Showing - ${property.address.formatted}`,

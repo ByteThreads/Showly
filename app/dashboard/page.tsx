@@ -28,6 +28,7 @@ export default function DashboardPage() {
 
   // Detailed data for widgets
   const [todayShowingsList, setTodayShowingsList] = useState<ShowingWithProperty[]>([]);
+  const [tomorrowShowingsList, setTomorrowShowingsList] = useState<ShowingWithProperty[]>([]);
   const [recentBookings, setRecentBookings] = useState<ShowingWithProperty[]>([]);
   const [pendingConfirmations, setPendingConfirmations] = useState<ShowingWithProperty[]>([]);
   const [needsAttention, setNeedsAttention] = useState<Property[]>([]);
@@ -85,6 +86,8 @@ export default function DashboardPage() {
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const endOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
       const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
@@ -94,13 +97,31 @@ export default function DashboardPage() {
           const date = s.scheduledAt.toDate();
           return date >= startOfToday && date < endOfToday;
         });
-        setTodayShowings(todayList.length);
         setTodayShowingsList(todayList);
 
-        const upcoming = showingsData.filter(s => s.scheduledAt.toDate() > now);
+        // Tomorrow's showings
+        const tomorrowList = showingsData.filter(s => {
+          const date = s.scheduledAt.toDate();
+          return date >= startOfTomorrow && date < endOfTomorrow;
+        });
+        setTomorrowShowingsList(tomorrowList);
+
+        // "Today you have X showings booked" = only SCHEDULED (pending confirmation)
+        const todayScheduled = todayList.filter(s => s.status === 'scheduled');
+        setTodayShowings(todayScheduled.length);
+
+        // "Upcoming Showings" = SCHEDULED + CONFIRMED (all that will happen)
+        const upcoming = showingsData.filter(s =>
+          s.scheduledAt.toDate() > now &&
+          (s.status === 'scheduled' || s.status === 'confirmed')
+        );
         setUpcomingShowings(upcoming.length);
 
-        const thisMonth = showingsData.filter(s => s.scheduledAt.toDate() >= startOfMonth);
+        // "This Month" = SCHEDULED + CONFIRMED (showings that will happen this month)
+        const thisMonth = showingsData.filter(s =>
+          s.scheduledAt.toDate() >= startOfMonth &&
+          (s.status === 'scheduled' || s.status === 'confirmed')
+        );
         setThisMonthShowings(thisMonth.length);
 
         // Recent bookings (last 5 showings created in past 7 days)
@@ -509,53 +530,127 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Today's Schedule Timeline */}
-      {todayShowingsList.length > 0 && (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-md p-6 mb-8 border border-blue-200">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-blue-600" />
-            <h3 className="text-xl font-bold text-gray-900">Today's Schedule</h3>
-            <span className="ml-auto bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-              {todayShowingsList.length} {todayShowingsList.length === 1 ? 'showing' : 'showings'}
-            </span>
-          </div>
-          <div className="space-y-2">
-            {todayShowingsList.map((showing, idx) => {
-              const date = showing.scheduledAt.toDate();
-              const timeString = date.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});
-              const [time, period] = timeString.split(' ');
+      {/* Today's & Tomorrow's Schedule - Side by Side */}
+      {(todayShowingsList.length > 0 || tomorrowShowingsList.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Today's Schedule */}
+          <div className={cn(
+            "bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-md p-6 border border-blue-200",
+            todayShowingsList.length === 0 && "opacity-50"
+          )}>
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-6 h-6 text-blue-600" />
+              <h3 className="text-xl font-bold text-gray-900">Today</h3>
+              <span className="text-sm text-gray-600">
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
+              {todayShowingsList.length > 0 && (
+                <span className="ml-auto bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                  {todayShowingsList.length}
+                </span>
+              )}
+            </div>
+            {todayShowingsList.length > 0 ? (
+              <div className="space-y-2">
+                {todayShowingsList.map((showing) => {
+                  const date = showing.scheduledAt.toDate();
+                  const timeString = date.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});
+                  const [time, period] = timeString.split(' ');
 
-              return (
-                <div
-                  key={showing.id}
-                  className="flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-blue-200 hover:border-blue-400 transition-all"
-                >
-                  <div className="flex-shrink-0 w-16 text-center">
-                    <div className="text-lg font-bold text-gray-900">
-                      {time}
+                  return (
+                    <div
+                      key={showing.id}
+                      className="flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-blue-200 hover:border-blue-400 transition-all"
+                    >
+                      <div className="flex-shrink-0 w-16 text-center">
+                        <div className="text-lg font-bold text-gray-900">{time}</div>
+                        <div className="text-xs text-gray-500">{period}</div>
+                      </div>
+                      <div className="h-12 w-px bg-blue-300" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">{showing.clientName}</div>
+                        <div className="text-sm text-gray-600 truncate">{showing.property?.address.street || 'Property'}</div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className={cn(
+                          'px-3 py-1 rounded-full text-xs font-medium',
+                          showing.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                          showing.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-700'
+                        )}>
+                          {showing.status}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {period}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No showings today</p>
+              </div>
+            )}
+          </div>
+
+          {/* Tomorrow's Schedule */}
+          <div className={cn(
+            "bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl shadow-md p-6 border border-emerald-200",
+            tomorrowShowingsList.length === 0 && "opacity-50"
+          )}>
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-6 h-6 text-emerald-600" />
+              <h3 className="text-xl font-bold text-gray-900">Tomorrow</h3>
+              <span className="text-sm text-gray-600">
+                {new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
+              {tomorrowShowingsList.length > 0 && (
+                <span className="ml-auto bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                  {tomorrowShowingsList.length}
+                </span>
+              )}
+            </div>
+            {tomorrowShowingsList.length > 0 ? (
+              <div className="space-y-2">
+                {tomorrowShowingsList.map((showing) => {
+                  const date = showing.scheduledAt.toDate();
+                  const timeString = date.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});
+                  const [time, period] = timeString.split(' ');
+
+                  return (
+                    <div
+                      key={showing.id}
+                      className="flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-emerald-200 hover:border-emerald-400 transition-all"
+                    >
+                      <div className="flex-shrink-0 w-16 text-center">
+                        <div className="text-lg font-bold text-gray-900">{time}</div>
+                        <div className="text-xs text-gray-500">{period}</div>
+                      </div>
+                      <div className="h-12 w-px bg-emerald-300" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">{showing.clientName}</div>
+                        <div className="text-sm text-gray-600 truncate">{showing.property?.address.street || 'Property'}</div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className={cn(
+                          'px-3 py-1 rounded-full text-xs font-medium',
+                          showing.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                          showing.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-700'
+                        )}>
+                          {showing.status}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="h-12 w-px bg-blue-300" />
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">{showing.clientName}</div>
-                    <div className="text-sm text-gray-600">{showing.property?.address.street || 'Property'}</div>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <span className={cn(
-                      'px-3 py-1 rounded-full text-xs font-medium',
-                      showing.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
-                      showing.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
-                      'bg-gray-100 text-gray-700'
-                    )}>
-                      {showing.status}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No showings tomorrow</p>
+              </div>
+            )}
           </div>
         </div>
       )}

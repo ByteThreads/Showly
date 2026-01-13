@@ -178,8 +178,7 @@ export default function NewPropertyPage() {
         bookingSlug,
         isBookingEnabled: true,
         status: 'active' as const,
-        showingDuration: 30,
-        bufferTime: 15,
+        // Note: showingDuration and bufferTime now come from agent.settings globally
         timezone: getTimezoneForState(formData.state), // Auto-detect timezone from state
         createdAt: new Date(),
         updatedAt: new Date(),
