@@ -35,14 +35,13 @@ export function getOAuth2Client() {
  * Generate authorization URL with required scopes
  * Scopes needed:
  * - calendar.events: Create/update/delete events
- * - calendar.readonly: Read calendars and events (for bidirectional sync)
+ * - userinfo.email: Get user email
  */
 export function getAuthorizationUrl(): string {
   const oauth2Client = getOAuth2Client();
 
   const scopes = [
     'https://www.googleapis.com/auth/calendar.events', // Manage calendar events
-    'https://www.googleapis.com/auth/calendar.readonly', // Read calendar data
     'https://www.googleapis.com/auth/userinfo.email', // Get user email
   ];
 
