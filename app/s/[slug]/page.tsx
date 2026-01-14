@@ -375,6 +375,7 @@ export default function BookingPage() {
           sms1h: false,
         },
         createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
       });
 
       // If agent is on trial, increment showing counter
