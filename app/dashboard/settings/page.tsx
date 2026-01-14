@@ -122,9 +122,12 @@ export default function SettingsPage() {
 
     if (params.get('calendar_error')) {
       const error = params.get('calendar_error');
+      const errorDetails = params.get('error_details');
       let errorMessage = 'Failed to connect Google Calendar';
       if (error === 'denied') errorMessage = 'Calendar authorization was denied';
       if (error === 'no_code') errorMessage = 'No authorization code received';
+      if (error === 'invalid_state') errorMessage = 'Invalid state parameter';
+      if (errorDetails) errorMessage += `: ${errorDetails}`;
       setMessage({ type: 'error', text: errorMessage });
       // Clean URL
       window.history.replaceState({}, '', '/dashboard/settings');

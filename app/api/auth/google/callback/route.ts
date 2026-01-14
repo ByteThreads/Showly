@@ -61,8 +61,10 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('[Google OAuth] Error in callback:', error);
+    const errorMessage = error instanceof Error ? error.message : 'unknown';
+    const encodedError = encodeURIComponent(errorMessage);
     return NextResponse.redirect(
-      new URL('/dashboard/settings?calendar_error=unknown', request.url)
+      new URL(`/dashboard/settings?calendar_error=unknown&error_details=${encodedError}`, request.url)
     );
   }
 }
