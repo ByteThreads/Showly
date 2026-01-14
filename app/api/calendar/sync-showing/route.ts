@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar';
 import type { Agent, Showing, Property } from '@/types/database';
 
@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch showing document using Admin SDK
-    const showingDoc = await adminDb.collection('showings').doc(showingId).get();
-    if (!showingDoc.exists) {
+    // Fetch showing document
+    const showingDoc = await getDoc(doc(db, 'showings', showingId));
+    if (!showingDoc.exists()) {
       return NextResponse.json(
         { error: 'Showing not found' },
         { status: 404 }
@@ -31,9 +31,9 @@ export async function POST(request: NextRequest) {
 
     const showing = { id: showingDoc.id, ...showingDoc.data() } as Showing;
 
-    // Fetch agent document using Admin SDK
-    const agentDoc = await adminDb.collection('agents').doc(showing.agentId).get();
-    if (!agentDoc.exists) {
+    // Fetch agent document
+    const agentDoc = await getDoc(doc(db, 'agents', showing.agentId));
+    if (!agentDoc.exists()) {
       return NextResponse.json(
         { error: 'Agent not found' },
         { status: 404 }
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch property document using Admin SDK
-    const propertyDoc = await adminDb.collection('properties').doc(showing.propertyId).get();
-    if (!propertyDoc.exists) {
+    // Fetch property document
+    const propertyDoc = await getDoc(doc(db, 'properties', showing.propertyId));
+    if (!propertyDoc.exists()) {
       return NextResponse.json(
         { error: 'Property not found' },
         { status: 404 }
@@ -66,10 +66,10 @@ export async function POST(request: NextRequest) {
       // Delete calendar event
       await deleteCalendarEvent(agent, showing.googleCalendarEventId);
 
-      // Remove event ID from showing using Admin SDK
-      await adminDb.collection('showings').doc(showingId).update({
+      // Remove event ID from showing
+      await updateDoc(doc(db, 'showings', showingId), {
         googleCalendarEventId: null,
-        updatedAt: FieldValue.serverTimestamp(),
+        updatedAt: new Date(),
       });
 
       return NextResponse.json({
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Double-check the showing doesn't have an event ID (race condition prevention)
-      // Re-fetch to ensure we have the latest data using Admin SDK
-      const refetchedShowingDoc = await adminDb.collection('showings').doc(showingId).get();
+      // Re-fetch to ensure we have the latest data
+      const refetchedShowingDoc = await getDoc(doc(db, 'showings', showingId));
       const refetchedShowing = { id: refetchedShowingDoc.id, ...refetchedShowingDoc.data() } as Showing;
 
       if (refetchedShowing.googleCalendarEventId) {
@@ -107,10 +107,10 @@ export async function POST(request: NextRequest) {
       // Create new event
       const eventId = await createCalendarEvent(agent, showing, property);
 
-      // Store event ID in showing document using Admin SDK
-      await adminDb.collection('showings').doc(showingId).update({
+      // Store event ID in showing document
+      await updateDoc(doc(db, 'showings', showingId), {
         googleCalendarEventId: eventId,
-        updatedAt: FieldValue.serverTimestamp(),
+        updatedAt: new Date(),
       });
 
       return NextResponse.json({
