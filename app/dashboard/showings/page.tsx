@@ -230,6 +230,23 @@ export default function ShowingsPage() {
         days_between_old_and_new: Math.floor((selectedSlot.date.getTime() - oldDate.getTime()) / (1000 * 60 * 60 * 24)),
       });
 
+      // Sync to Google Calendar if enabled
+      if (agent?.settings.googleCalendarSync) {
+        try {
+          await fetch('/api/calendar/sync-showing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              showingId: showingToReschedule.id,
+            }),
+          });
+          console.log('[Reschedule] Showing synced to Google Calendar');
+        } catch (calendarError) {
+          console.error('Error syncing reschedule to Google Calendar:', calendarError);
+          // Don't fail the reschedule if calendar sync fails
+        }
+      }
+
       // Close modal and reset
       setRescheduleModalOpen(false);
       setShowingToReschedule(null);
@@ -277,6 +294,26 @@ export default function ShowingsPage() {
             }
           })
           .catch(err => console.error('Failed to send email notification:', err));
+      }
+
+      // Sync to Google Calendar if enabled
+      if (agent?.settings.googleCalendarSync) {
+        try {
+          // If cancelled, delete the event. Otherwise, update it
+          const action = newStatus === 'cancelled' ? 'delete' : undefined;
+          await fetch('/api/calendar/sync-showing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              showingId,
+              action,
+            }),
+          });
+          console.log('[Status Update] Showing synced to Google Calendar');
+        } catch (calendarError) {
+          console.error('Error syncing status to Google Calendar:', calendarError);
+          // Don't fail the status update if calendar sync fails
+        }
       }
     } catch (error) {
       console.error('Error updating showing status:', error);

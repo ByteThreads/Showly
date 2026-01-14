@@ -354,7 +354,7 @@ export default function BookingPage() {
 
     try {
       // Create showing document
-      await addDoc(collection(db, 'showings'), {
+      const showingRef = await addDoc(collection(db, 'showings'), {
         propertyId: property.id,
         agentId: agent.id,
         clientName: formData.name,
@@ -437,6 +437,23 @@ export default function BookingPage() {
         } catch (smsError) {
           console.error('Error sending SMS:', smsError);
           // Don't fail the booking if SMS fails
+        }
+      }
+
+      // Sync to Google Calendar if enabled
+      if (agent.settings.googleCalendarSync) {
+        try {
+          await fetch('/api/calendar/sync-showing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              showingId: showingRef.id,
+            }),
+          });
+          console.log('[Booking] Showing synced to Google Calendar');
+        } catch (calendarError) {
+          console.error('Error syncing to Google Calendar:', calendarError);
+          // Don't fail the booking if calendar sync fails
         }
       }
 

@@ -35,6 +35,9 @@ export interface AgentSettings {
   emailReminders: boolean;
   googleCalendarSync: boolean;
   googleRefreshToken?: string;
+  googleAccessToken?: string;
+  googleTokenExpiry?: number;  // Unix timestamp when access token expires
+  googleCalendarId?: string;  // Calendar ID to sync to (usually "primary")
   emailBranding?: EmailBranding;  // Custom email branding settings
 }
 
@@ -141,6 +144,7 @@ export interface Showing {
   cancelledAt?: Timestamp;
   cancellationReason?: string;
   rescheduledFrom?: Timestamp; // Original scheduled time if rescheduled
+  googleCalendarEventId?: string; // Google Calendar event ID for synced events
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

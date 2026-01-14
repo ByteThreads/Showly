@@ -9,6 +9,7 @@ import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 import type { AgentSettings, WorkingHours, EmailBranding } from '@/types/database';
 import { uploadImage, validateImageFile } from '@/lib/utils/upload-image';
+import { Calendar, Check, X } from 'lucide-react';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 type DayOfWeek = typeof DAYS[number];
@@ -44,6 +45,11 @@ export default function SettingsPage() {
   const [footerText, setFooterText] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Google Calendar sync state
+  const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(false);
+  const [connectingCalendar, setConnectingCalendar] = useState(false);
+  const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
 
   // Load settings from Firestore
   useEffect(() => {
@@ -87,6 +93,9 @@ export default function SettingsPage() {
               if (branding.accentColor) setAccentColor(branding.accentColor);
               if (branding.footerText) setFooterText(branding.footerText);
             }
+
+            // Load calendar sync status
+            setCalendarSyncEnabled(settings.googleCalendarSync || false);
           }
         }
       } catch (error) {
@@ -99,6 +108,28 @@ export default function SettingsPage() {
 
     loadSettings();
   }, [user]);
+
+  // Check for OAuth callback messages
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('calendar_success') === 'true') {
+      setMessage({ type: 'success', text: 'Google Calendar connected successfully!' });
+      setCalendarSyncEnabled(true);
+      // Clean URL
+      window.history.replaceState({}, '', '/dashboard/settings');
+    }
+
+    if (params.get('calendar_error')) {
+      const error = params.get('calendar_error');
+      let errorMessage = 'Failed to connect Google Calendar';
+      if (error === 'denied') errorMessage = 'Calendar authorization was denied';
+      if (error === 'no_code') errorMessage = 'No authorization code received';
+      setMessage({ type: 'error', text: errorMessage });
+      // Clean URL
+      window.history.replaceState({}, '', '/dashboard/settings');
+    }
+  }, []);
 
   // Update working hours for a specific day
   function updateWorkingHoursForDay(day: DayOfWeek, field: keyof WorkingHours, value: string | boolean) {
@@ -154,6 +185,69 @@ export default function SettingsPage() {
     setPrimaryColor('#2563EB');
     setAccentColor('#10B981');
     setFooterText('');
+  }
+
+  // Connect Google Calendar
+  async function handleConnectCalendar() {
+    if (!user) return;
+
+    setConnectingCalendar(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/calendar/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: user.uid }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to initiate calendar connection');
+      }
+
+      // Redirect to Google OAuth consent screen
+      window.location.href = data.authUrl;
+    } catch (error: any) {
+      console.error('Error connecting calendar:', error);
+      setMessage({ type: 'error', text: error.message || 'Failed to connect calendar' });
+      setConnectingCalendar(false);
+    }
+  }
+
+  // Disconnect Google Calendar
+  async function handleDisconnectCalendar() {
+    if (!user) return;
+
+    if (!confirm('Are you sure you want to disconnect Google Calendar? Existing calendar events will not be deleted, but new showings will not sync automatically.')) {
+      return;
+    }
+
+    setDisconnectingCalendar(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/calendar/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: user.uid }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to disconnect calendar');
+      }
+
+      setCalendarSyncEnabled(false);
+      setMessage({ type: 'success', text: 'Google Calendar disconnected successfully' });
+    } catch (error: any) {
+      console.error('Error disconnecting calendar:', error);
+      setMessage({ type: 'error', text: error.message || 'Failed to disconnect calendar' });
+    } finally {
+      setDisconnectingCalendar(false);
+    }
   }
 
   // Save settings to Firestore
@@ -569,6 +663,97 @@ export default function SettingsPage() {
                 className={cn(STYLES.input.base, STYLES.input.default)}
                 placeholder={STRINGS.settings.footerTextPlaceholder}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Google Calendar Sync Section */}
+        <div className={STYLES.container.card}>
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className={cn(STYLES.text.h3, 'flex items-center gap-2')}>
+                <Calendar className="w-5 h-5 text-blue-600" />
+                Google Calendar Sync
+              </h2>
+              <p className={cn(STYLES.text.small, 'mt-1')}>
+                Automatically sync your showings with Google Calendar. When a showing is booked, confirmed, rescheduled, or cancelled, it will automatically update in your calendar.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Connection Status */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-3">
+                {calendarSyncEnabled ? (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Connected</p>
+                      <p className="text-sm text-gray-600">Your showings are syncing to Google Calendar</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                      <X className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Not Connected</p>
+                      <p className="text-sm text-gray-600">Connect to enable automatic calendar sync</p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {calendarSyncEnabled ? (
+                <button
+                  type="button"
+                  onClick={handleDisconnectCalendar}
+                  disabled={disconnectingCalendar}
+                  className="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {disconnectingCalendar ? 'Disconnecting...' : 'Disconnect'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleConnectCalendar}
+                  disabled={connectingCalendar}
+                  className={cn(
+                    STYLES.button.primary,
+                    '!w-auto px-6',
+                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                  )}
+                >
+                  {connectingCalendar ? 'Connecting...' : 'Connect Google Calendar'}
+                </button>
+              )}
+            </div>
+
+            {/* How It Works */}
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-semibold text-blue-900 mb-2">How Calendar Sync Works</h3>
+              <ul className="space-y-1.5 text-sm text-blue-800">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 mt-0.5">•</span>
+                  <span>New showings are automatically added to your Google Calendar</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 mt-0.5">•</span>
+                  <span>Rescheduled showings update the calendar event time</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 mt-0.5">•</span>
+                  <span>Cancelled showings are removed from your calendar</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 mt-0.5">•</span>
+                  <span>Each event includes client details and property information</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>

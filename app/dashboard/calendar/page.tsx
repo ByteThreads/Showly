@@ -384,12 +384,12 @@ export default function CalendarPage() {
       if (showing.scheduledAt && typeof showing.scheduledAt === 'object' && 'toDate' in showing.scheduledAt) {
         // Firestore Timestamp
         startTime = showing.scheduledAt.toDate();
-      } else if (showing.scheduledAt instanceof Date) {
+      } else if ((showing.scheduledAt as any) instanceof Date) {
         // Already a Date
-        startTime = showing.scheduledAt;
+        startTime = showing.scheduledAt as Date;
       } else {
         // Try to convert to Date
-        startTime = new Date(showing.scheduledAt);
+        startTime = new Date(showing.scheduledAt as any);
       }
 
       console.log('Converted startTime:', startTime, 'isValid:', !isNaN(startTime.getTime()));
@@ -464,6 +464,26 @@ export default function CalendarPage() {
             showingTime: selectedShowing.scheduledAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
           }),
         });
+      }
+
+      // Sync to Google Calendar if enabled
+      if (agent?.settings.googleCalendarSync) {
+        try {
+          // If cancelled, delete the event. Otherwise, update it
+          const action = newStatus === 'cancelled' ? 'delete' : undefined;
+          await fetch('/api/calendar/sync-showing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              showingId,
+              action,
+            }),
+          });
+          console.log('[Calendar] Showing status synced to Google Calendar');
+        } catch (calendarError) {
+          console.error('Error syncing status to Google Calendar:', calendarError);
+          // Don't fail the status update if calendar sync fails
+        }
       }
 
       setSelectedShowing(null);
