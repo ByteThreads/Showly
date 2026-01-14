@@ -109,17 +109,50 @@ export default function SettingsPage() {
     loadSettings();
   }, [user]);
 
-  // Check for OAuth callback messages
+  // Check for OAuth callback messages and tokens
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
 
-    if (params.get('calendar_success') === 'true') {
-      setMessage({ type: 'success', text: 'Google Calendar connected successfully!' });
-      setCalendarSyncEnabled(true);
-      // Clean URL
-      window.history.replaceState({}, '', '/dashboard/settings');
+    // Handle calendar tokens from OAuth callback (in URL hash)
+    if (hash.includes('calendar_tokens=') && user) {
+      const tokensMatch = hash.match(/calendar_tokens=([^&]+)/);
+      if (tokensMatch) {
+        try {
+          const encodedTokens = tokensMatch[1];
+          const tokenData = JSON.parse(atob(encodedTokens));
+
+          // Verify the agent ID matches the current user
+          if (tokenData.agentId === user.uid) {
+            // Save tokens to Firestore
+            const agentRef = doc(db, 'agents', user.uid);
+            updateDoc(agentRef, {
+              'settings.googleCalendarSync': true,
+              'settings.googleAccessToken': tokenData.accessToken,
+              'settings.googleRefreshToken': tokenData.refreshToken,
+              'settings.googleTokenExpiry': tokenData.expiryDate,
+              'settings.googleCalendarId': 'primary',
+              updatedAt: new Date(),
+            }).then(() => {
+              setMessage({ type: 'success', text: 'Google Calendar connected successfully!' });
+              setCalendarSyncEnabled(true);
+              // Clean URL
+              window.history.replaceState({}, '', '/dashboard/settings');
+            }).catch((error) => {
+              console.error('Error saving calendar tokens:', error);
+              setMessage({ type: 'error', text: 'Failed to save calendar connection' });
+            });
+          } else {
+            setMessage({ type: 'error', text: 'Invalid agent ID in OAuth response' });
+          }
+        } catch (error) {
+          console.error('Error parsing calendar tokens:', error);
+          setMessage({ type: 'error', text: 'Failed to process calendar connection' });
+        }
+      }
     }
 
+    // Handle error messages
     if (params.get('calendar_error')) {
       const error = params.get('calendar_error');
       const errorDetails = params.get('error_details');
@@ -132,7 +165,7 @@ export default function SettingsPage() {
       // Clean URL
       window.history.replaceState({}, '', '/dashboard/settings');
     }
-  }, []);
+  }, [user]);
 
   // Update working hours for a specific day
   function updateWorkingHoursForDay(day: DayOfWeek, field: keyof WorkingHours, value: string | boolean) {

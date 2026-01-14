@@ -1,12 +1,14 @@
 /**
  * Google Calendar OAuth Callback
  * Handles the OAuth redirect after user authorizes calendar access
+ *
+ * Since we can't use Admin SDK (service account key creation restricted),
+ * we redirect back to settings page with tokens in URL hash (not query params)
+ * so the authenticated client can save them to Firestore
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForTokens } from '@/lib/google-calendar';
-import { adminDb } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,23 +43,21 @@ export async function GET(request: NextRequest) {
     console.log('[Google OAuth] Exchanging code for tokens...');
     const { accessToken, refreshToken, expiryDate } = await exchangeCodeForTokens(code);
 
-    // Update agent document with tokens using Admin SDK
-    console.log('[Google OAuth] Updating agent document...');
-    const agentRef = adminDb.collection('agents').doc(state);
-    await agentRef.update({
-      'settings.googleCalendarSync': true,
-      'settings.googleAccessToken': accessToken,
-      'settings.googleRefreshToken': refreshToken,
-      'settings.googleTokenExpiry': expiryDate,
-      'settings.googleCalendarId': 'primary', // Default to primary calendar
-      updatedAt: FieldValue.serverTimestamp(),
+    console.log('[Google OAuth] Tokens received, redirecting to settings...');
+
+    // Encode tokens as base64 to pass through URL hash (more secure than query params)
+    const tokenData = JSON.stringify({
+      agentId: state,
+      accessToken,
+      refreshToken,
+      expiryDate,
     });
+    const encodedTokens = Buffer.from(tokenData).toString('base64');
 
-    console.log('[Google OAuth] Calendar sync enabled successfully');
-
-    // Redirect to settings page with success message
+    // Redirect to settings page with tokens in URL hash
+    // Hash is not sent to server and JavaScript can access it
     return NextResponse.redirect(
-      new URL('/dashboard/settings?calendar_success=true', request.url)
+      new URL(`/dashboard/settings#calendar_tokens=${encodedTokens}`, request.url)
     );
   } catch (error) {
     console.error('[Google OAuth] Error in callback:', error);
