@@ -446,22 +446,8 @@ export default function BookingPage() {
         }
       }
 
-      // Sync to Google Calendar if enabled
-      if (agent.settings.googleCalendarSync) {
-        try {
-          await fetch('/api/calendar/sync-showing', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              showingId: showingRef.id,
-            }),
-          });
-          console.log('[Booking] Showing synced to Google Calendar');
-        } catch (calendarError) {
-          console.error('Error syncing to Google Calendar:', calendarError);
-          // Don't fail the booking if calendar sync fails
-        }
-      }
+      // Note: Don't sync to Google Calendar at booking time
+      // Showings are synced only when agent confirms them (status: "confirmed")
 
       // Track successful booking
       posthog.capture('showing_booked', {

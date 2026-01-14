@@ -230,8 +230,8 @@ export default function ShowingsPage() {
         days_between_old_and_new: Math.floor((selectedSlot.date.getTime() - oldDate.getTime()) / (1000 * 60 * 60 * 24)),
       });
 
-      // Sync to Google Calendar if enabled
-      if (agent?.settings.googleCalendarSync) {
+      // Sync to Google Calendar if enabled (only if showing is confirmed)
+      if (agent?.settings.googleCalendarSync && showingToReschedule.status === 'confirmed') {
         try {
           await fetch('/api/calendar/sync-showing', {
             method: 'POST',
@@ -240,7 +240,7 @@ export default function ShowingsPage() {
               showingId: showingToReschedule.id,
             }),
           });
-          console.log('[Reschedule] Showing synced to Google Calendar');
+          console.log('[Reschedule] Confirmed showing synced to Google Calendar');
         } catch (calendarError) {
           console.error('Error syncing reschedule to Google Calendar:', calendarError);
           // Don't fail the reschedule if calendar sync fails
@@ -296,11 +296,23 @@ export default function ShowingsPage() {
           .catch(err => console.error('Failed to send email notification:', err));
       }
 
-      // Sync to Google Calendar if enabled
+      // Sync to Google Calendar if enabled (only for confirmed or cancelled showings)
       if (agent?.settings.googleCalendarSync) {
         try {
-          // If cancelled, delete the event. Otherwise, update it
-          const action = newStatus === 'cancelled' ? 'delete' : undefined;
+          let action: 'delete' | undefined = undefined;
+
+          if (newStatus === 'cancelled') {
+            // Delete event from calendar if showing is cancelled
+            action = 'delete';
+          } else if (newStatus === 'confirmed') {
+            // Create/update event in calendar when confirmed
+            action = undefined; // sync-showing will create or update
+          } else {
+            // Don't sync for 'completed' or 'no-show' - calendar event stays as-is
+            console.log('[Status Update] Skipping calendar sync for status:', newStatus);
+            throw new Error('skip'); // Skip calendar sync
+          }
+
           await fetch('/api/calendar/sync-showing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -311,7 +323,11 @@ export default function ShowingsPage() {
           });
           console.log('[Status Update] Showing synced to Google Calendar');
         } catch (calendarError) {
-          console.error('Error syncing status to Google Calendar:', calendarError);
+          if (calendarError instanceof Error && calendarError.message === 'skip') {
+            // Intentionally skipped, not an error
+          } else {
+            console.error('Error syncing status to Google Calendar:', calendarError);
+          }
           // Don't fail the status update if calendar sync fails
         }
       }
