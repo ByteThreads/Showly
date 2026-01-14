@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForTokens } from '@/lib/google-calendar';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,16 +41,16 @@ export async function GET(request: NextRequest) {
     console.log('[Google OAuth] Exchanging code for tokens...');
     const { accessToken, refreshToken, expiryDate } = await exchangeCodeForTokens(code);
 
-    // Update agent document with tokens
+    // Update agent document with tokens using Admin SDK
     console.log('[Google OAuth] Updating agent document...');
-    const agentRef = doc(db, 'agents', state);
-    await updateDoc(agentRef, {
+    const agentRef = adminDb.collection('agents').doc(state);
+    await agentRef.update({
       'settings.googleCalendarSync': true,
       'settings.googleAccessToken': accessToken,
       'settings.googleRefreshToken': refreshToken,
       'settings.googleTokenExpiry': expiryDate,
       'settings.googleCalendarId': 'primary', // Default to primary calendar
-      updatedAt: new Date(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     console.log('[Google OAuth] Calendar sync enabled successfully');
