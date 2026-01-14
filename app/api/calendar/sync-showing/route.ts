@@ -88,6 +88,22 @@ export async function POST(request: NextRequest) {
         eventId: showing.googleCalendarEventId,
       });
     } else {
+      // Double-check the showing doesn't have an event ID (race condition prevention)
+      // Re-fetch to ensure we have the latest data
+      const refetchedShowingDoc = await getDoc(doc(db, 'showings', showingId));
+      const refetchedShowing = { id: refetchedShowingDoc.id, ...refetchedShowingDoc.data() } as Showing;
+
+      if (refetchedShowing.googleCalendarEventId) {
+        // Another request already created the event, update it instead
+        await updateCalendarEvent(agent, refetchedShowing, property, refetchedShowing.googleCalendarEventId);
+
+        return NextResponse.json({
+          success: true,
+          message: 'Calendar event updated (race condition avoided)',
+          eventId: refetchedShowing.googleCalendarEventId,
+        });
+      }
+
       // Create new event
       const eventId = await createCalendarEvent(agent, showing, property);
 
