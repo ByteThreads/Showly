@@ -379,15 +379,20 @@ export default function BookingPage() {
       });
 
       // If agent is on trial, increment showing counter
+      // Note: This will fail on the client side due to security rules (unauthenticated user)
+      // The counter should be incremented server-side or via Cloud Function instead
       if (agent.subscriptionStatus === 'trial') {
-        const newCount = (agent.trialShowingsCount || 0) + 1;
-        await updateDoc(doc(db, 'agents', agent.id), {
-          trialShowingsCount: newCount,
-          updatedAt: new Date(),
-        });
-
-        // If this was the 3rd showing, the trial has expired
-        // The next page load will redirect them to pricing via the paywall
+        try {
+          const newCount = (agent.trialShowingsCount || 0) + 1;
+          await updateDoc(doc(db, 'agents', agent.id), {
+            trialShowingsCount: newCount,
+            updatedAt: new Date(),
+          });
+        } catch (trialCounterError) {
+          console.error('Error updating trial counter (expected on client):', trialCounterError);
+          // Don't fail the booking if trial counter update fails
+          // This should be handled server-side instead
+        }
       }
 
       // Send confirmation emails
