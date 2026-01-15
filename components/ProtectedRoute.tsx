@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES } from '@/lib/constants/styles';
-import { needsUpgrade } from '@/lib/utils/subscription';
+import { needsUpgrade, getTrialExpirationReason } from '@/lib/utils/subscription';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -31,7 +31,10 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
       const isAllowedPath = allowedPaths.some(path => pathname?.startsWith(path));
 
       if (!isAllowedPath && needsUpgrade(agent)) {
-        router.push('/pricing');
+        // Determine why they need to upgrade
+        const reason = getTrialExpirationReason(agent);
+        const redirectUrl = reason ? `/pricing?reason=${reason}` : '/pricing';
+        router.push(redirectUrl);
       }
     }
   }, [user, agent, loading, requireSubscription, router, pathname]);

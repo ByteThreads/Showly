@@ -14,6 +14,7 @@ export default function PricingContent() {
   const [loadingPlan, setLoadingPlan] = useState<'founder' | 'standard' | null>(null);
   const [founderSpotsRemaining, setFounderSpotsRemaining] = useState<number | null>(200); // Start optimistically at 200
   const cancelled = searchParams?.get('cancelled') === 'true';
+  const reason = searchParams?.get('reason') as 'showings_limit' | 'time_limit' | null;
 
   // Check founder spots remaining via API
   useEffect(() => {
@@ -98,6 +99,29 @@ export default function PricingContent() {
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
               <p className="text-amber-800">
                 Checkout was cancelled. You can start your trial whenever you're ready!
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Trial Expiration Banner */}
+        {reason && (
+          <div className="mb-8 max-w-2xl mx-auto">
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-6 text-center">
+              <div className="mb-3">
+                <svg className="w-16 h-16 mx-auto text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {reason === 'showings_limit'
+                  ? STRINGS.pricing.trial.expiredShowingsLimit.title
+                  : STRINGS.pricing.trial.expiredTimeLimit.title}
+              </h3>
+              <p className="text-gray-700">
+                {reason === 'showings_limit'
+                  ? STRINGS.pricing.trial.expiredShowingsLimit.description
+                  : STRINGS.pricing.trial.expiredTimeLimit.description}
               </p>
             </div>
           </div>

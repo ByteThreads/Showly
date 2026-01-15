@@ -66,6 +66,32 @@ export function getRemainingTrialDays(agent: Agent | null): number {
 }
 
 /**
+ * Get the reason why trial expired
+ * Returns 'showings_limit', 'time_limit', or null if not expired
+ */
+export function getTrialExpirationReason(agent: Agent | null): 'showings_limit' | 'time_limit' | null {
+  if (!agent || agent.subscriptionStatus !== 'trial') return null;
+
+  // Check showings limit first (takes priority)
+  if ((agent.trialShowingsCount || 0) >= 3) {
+    return 'showings_limit';
+  }
+
+  // Check time limit
+  if (agent.trialStartDate) {
+    const trialStart = agent.trialStartDate instanceof Date ? agent.trialStartDate : new Date(agent.trialStartDate);
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    if (trialStart < fourteenDaysAgo) {
+      return 'time_limit';
+    }
+  }
+
+  return null;
+}
+
+/**
  * Check if agent needs to upgrade (trial expired or no subscription)
  */
 export function needsUpgrade(agent: Agent | null): boolean {

@@ -378,20 +378,18 @@ export default function BookingPage() {
         updatedAt: Timestamp.now(),
       });
 
-      // If agent is on trial, increment showing counter
-      // Note: This will fail on the client side due to security rules (unauthenticated user)
-      // The counter should be incremented server-side or via Cloud Function instead
+      // Increment trial showing counter via server-side API
+      // (Client can't update agent document due to security rules)
       if (agent.subscriptionStatus === 'trial') {
         try {
-          const newCount = (agent.trialShowingsCount || 0) + 1;
-          await updateDoc(doc(db, 'agents', agent.id), {
-            trialShowingsCount: newCount,
-            updatedAt: new Date(),
+          await fetch('/api/increment-trial-counter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agentId: agent.id }),
           });
         } catch (trialCounterError) {
-          console.error('Error updating trial counter (expected on client):', trialCounterError);
-          // Don't fail the booking if trial counter update fails
-          // This should be handled server-side instead
+          console.error('Error incrementing trial counter:', trialCounterError);
+          // Don't fail the booking if counter update fails
         }
       }
 

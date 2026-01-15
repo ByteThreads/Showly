@@ -450,6 +450,14 @@ export const STRINGS = {
       showingLimit: '3 showings',
       description: 'Try Showly free for 14 days or 3 showings, whichever comes first',
       noCreditCard: 'No credit card required',
+      expiredShowingsLimit: {
+        title: 'You\'ve Used All 3 Trial Showings!',
+        description: 'Great job booking showings with Showly! To continue scheduling unlimited showings, upgrade to a paid plan.',
+      },
+      expiredTimeLimit: {
+        title: 'Your 14-Day Trial Has Ended',
+        description: 'Your trial period is complete. Upgrade now to continue using Showly and keep booking showings.',
+      },
     },
     upgrade: {
       title: 'Upgrade to Pro',
