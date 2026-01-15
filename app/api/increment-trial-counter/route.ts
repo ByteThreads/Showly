@@ -13,8 +13,10 @@ import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 export async function POST(request: NextRequest) {
   try {
     const { agentId } = await request.json();
+    console.log('[Trial Counter API] Request received for agent:', agentId);
 
     if (!agentId) {
+      console.error('[Trial Counter API] Missing agent ID');
       return NextResponse.json(
         { error: 'Agent ID is required' },
         { status: 400 }
@@ -26,6 +28,7 @@ export async function POST(request: NextRequest) {
     const agentDoc = await getDoc(agentRef);
 
     if (!agentDoc.exists()) {
+      console.error('[Trial Counter API] Agent not found:', agentId);
       return NextResponse.json(
         { error: 'Agent not found' },
         { status: 404 }
@@ -33,6 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const agent = agentDoc.data();
+    console.log('[Trial Counter API] Agent status:', agent.subscriptionStatus, 'Current count:', agent.trialShowingsCount || 0);
 
     // Only increment if agent is on trial
     if (agent.subscriptionStatus === 'trial') {
@@ -42,6 +46,7 @@ export async function POST(request: NextRequest) {
       });
 
       const newCount = (agent.trialShowingsCount || 0) + 1;
+      console.log('[Trial Counter API] Counter incremented to:', newCount);
 
       return NextResponse.json({
         success: true,
@@ -51,13 +56,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Not on trial, no action needed
+    console.log('[Trial Counter API] Agent not on trial, skipping increment');
     return NextResponse.json({
       success: true,
       message: 'Agent not on trial, no counter update needed',
     });
 
   } catch (error: any) {
-    console.error('Error incrementing trial counter:', error);
+    console.error('[Trial Counter API] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to increment trial counter' },
       { status: 500 }

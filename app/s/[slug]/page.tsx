@@ -382,13 +382,22 @@ export default function BookingPage() {
       // (Client can't update agent document due to security rules)
       if (agent.subscriptionStatus === 'trial') {
         try {
-          await fetch('/api/increment-trial-counter', {
+          console.log('[Trial Counter] Incrementing trial counter for agent:', agent.id);
+          const response = await fetch('/api/increment-trial-counter', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ agentId: agent.id }),
           });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('[Trial Counter] API error:', errorData);
+          } else {
+            const data = await response.json();
+            console.log('[Trial Counter] Success:', data);
+          }
         } catch (trialCounterError) {
-          console.error('Error incrementing trial counter:', trialCounterError);
+          console.error('[Trial Counter] Request failed:', trialCounterError);
           // Don't fail the booking if counter update fails
         }
       }

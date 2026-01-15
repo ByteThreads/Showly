@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { STRINGS } from '@/lib/constants/strings';
@@ -27,8 +27,15 @@ import {
 
 export default function BillingPage() {
   const router = useRouter();
-  const { user, agent, loading: authLoading } = useAuth();
+  const { user, agent, loading: authLoading, refreshAgent } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Refresh agent data when page loads to get latest trial counter
+  useEffect(() => {
+    if (!authLoading) {
+      refreshAgent();
+    }
+  }, [authLoading, refreshAgent]);
 
   if (authLoading) {
     return (

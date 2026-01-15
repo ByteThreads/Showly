@@ -32,6 +32,7 @@ interface AuthContextType {
   linkAccountWithCredential: (email: string, password: string, credential: any) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshAgent: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -45,6 +46,7 @@ const AuthContext = createContext<AuthContextType>({
   linkAccountWithCredential: async () => {},
   resetPassword: async () => {},
   signOut: async () => {},
+  refreshAgent: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -361,6 +363,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Refresh agent data from Firestore
+  async function refreshAgent() {
+    if (user?.uid) {
+      await fetchAgentData(user.uid);
+    }
+  }
+
   const value = {
     user,
     agent,
@@ -372,6 +381,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     linkAccountWithCredential,
     resetPassword,
     signOut,
+    refreshAgent,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
