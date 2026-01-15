@@ -409,8 +409,10 @@ export default function ShowingsPage() {
   if (loading) {
     return (
       <div className={STYLES.loading.overlay}>
-        <div className={STYLES.loading.spinner}></div>
-        <p className={STYLES.loading.text}>{STRINGS.common.loading}</p>
+        <div className="text-center">
+          <div className={STYLES.loading.spinner}></div>
+          <p className={STYLES.loading.text}>{STRINGS.common.loading}</p>
+        </div>
       </div>
     );
   }

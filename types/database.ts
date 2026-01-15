@@ -38,6 +38,7 @@ export interface AgentSettings {
   googleAccessToken?: string;
   googleTokenExpiry?: number;  // Unix timestamp when access token expires
   googleCalendarId?: string;  // Calendar ID to sync to (usually "primary")
+  calendarFeedToken?: string;  // Unique token for iCal subscription feed (webcal://.../feed/[token])
   emailBranding?: EmailBranding;  // Custom email branding settings
 }
 

@@ -9,7 +9,8 @@ import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 import type { AgentSettings, WorkingHours, EmailBranding } from '@/types/database';
 import { uploadImage, validateImageFile } from '@/lib/utils/upload-image';
-import { Calendar, Check, X } from 'lucide-react';
+import { generateCalendarFeedToken } from '@/lib/utils/calendar-feed-token';
+import { Calendar, Check, X, RefreshCw, Copy, HelpCircle } from 'lucide-react';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 type DayOfWeek = typeof DAYS[number];
@@ -50,6 +51,12 @@ export default function SettingsPage() {
   const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(false);
   const [connectingCalendar, setConnectingCalendar] = useState(false);
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
+
+  // Calendar feed state
+  const [calendarFeedToken, setCalendarFeedToken] = useState<string | null>(null);
+  const [generatingFeedToken, setGeneratingFeedToken] = useState(false);
+  const [copiedFeedUrl, setCopiedFeedUrl] = useState(false);
+  const [showFeedInstructions, setShowFeedInstructions] = useState(false);
 
   // Load settings from Firestore
   useEffect(() => {
@@ -96,6 +103,9 @@ export default function SettingsPage() {
 
             // Load calendar sync status
             setCalendarSyncEnabled(settings.googleCalendarSync || false);
+
+            // Load calendar feed token
+            setCalendarFeedToken(settings.calendarFeedToken || null);
           }
         }
       } catch (error) {
@@ -283,6 +293,54 @@ export default function SettingsPage() {
       setMessage({ type: 'error', text: error.message || 'Failed to disconnect calendar' });
     } finally {
       setDisconnectingCalendar(false);
+    }
+  }
+
+  // Generate calendar feed token
+  async function handleGenerateFeedToken() {
+    if (!user) return;
+
+    setGeneratingFeedToken(true);
+    setMessage(null);
+
+    try {
+      const token = generateCalendarFeedToken();
+      const agentRef = doc(db, 'agents', user.uid);
+
+      await updateDoc(agentRef, {
+        'settings.calendarFeedToken': token,
+        updatedAt: new Date(),
+      });
+
+      setCalendarFeedToken(token);
+      setMessage({ type: 'success', text: 'Calendar feed URL generated successfully!' });
+
+      // Track event
+      posthog.capture('calendar_feed_generated');
+    } catch (error: any) {
+      console.error('Error generating calendar feed token:', error);
+      setMessage({ type: 'error', text: 'Failed to generate calendar feed URL' });
+    } finally {
+      setGeneratingFeedToken(false);
+    }
+  }
+
+  // Copy calendar feed URL to clipboard
+  async function handleCopyFeedUrl() {
+    if (!calendarFeedToken) return;
+
+    const feedUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/calendar/feed/${calendarFeedToken}`;
+    const webcalUrl = feedUrl.replace(/^https?:/, 'webcal:');
+
+    try {
+      await navigator.clipboard.writeText(webcalUrl);
+      setCopiedFeedUrl(true);
+      setTimeout(() => setCopiedFeedUrl(false), 2000);
+
+      // Track event
+      posthog.capture('calendar_feed_url_copied');
+    } catch (error) {
+      console.error('Failed to copy:', error);
     }
   }
 
@@ -708,11 +766,11 @@ export default function SettingsPage() {
           <div className="flex items-start justify-between mb-6">
             <div>
               <h2 className={cn(STYLES.text.h3, 'flex items-center gap-2')}>
-                <Calendar className="w-5 h-5 text-blue-600" />
-                Google Calendar Sync
+                <RefreshCw className="w-5 h-5 text-blue-600" />
+                {STRINGS.settings.googleCalendarTitle}
               </h2>
               <p className={cn(STYLES.text.small, 'mt-1')}>
-                Automatically sync your showings with Google Calendar. When a showing is booked, confirmed, rescheduled, or cancelled, it will automatically update in your calendar.
+                {STRINGS.settings.googleCalendarDescription}
               </p>
             </div>
           </div>
@@ -727,7 +785,7 @@ export default function SettingsPage() {
                       <Check className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Connected</p>
+                      <p className="font-medium text-gray-900">{STRINGS.settings.googleCalendarConnected}</p>
                       <p className="text-sm text-gray-600">Your showings are syncing to Google Calendar</p>
                     </div>
                   </>
@@ -737,7 +795,7 @@ export default function SettingsPage() {
                       <X className="w-5 h-5 text-gray-400" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Not Connected</p>
+                      <p className="font-medium text-gray-900">{STRINGS.settings.googleCalendarDisconnected}</p>
                       <p className="text-sm text-gray-600">Connect to enable automatic calendar sync</p>
                     </div>
                   </>
@@ -751,7 +809,7 @@ export default function SettingsPage() {
                   disabled={disconnectingCalendar}
                   className="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {disconnectingCalendar ? 'Disconnecting...' : 'Disconnect'}
+                  {disconnectingCalendar ? 'Disconnecting...' : STRINGS.settings.googleCalendarDisconnect}
                 </button>
               ) : (
                 <button
@@ -764,33 +822,190 @@ export default function SettingsPage() {
                     'disabled:opacity-50 disabled:cursor-not-allowed'
                   )}
                 >
-                  {connectingCalendar ? 'Connecting...' : 'Connect Google Calendar'}
+                  {connectingCalendar ? 'Connecting...' : STRINGS.settings.googleCalendarConnect}
                 </button>
               )}
             </div>
 
-            {/* How It Works */}
+            {/* Features */}
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="text-sm font-semibold text-blue-900 mb-2">How Calendar Sync Works</h3>
+              <h3 className="text-sm font-semibold text-blue-900 mb-2">Features</h3>
               <ul className="space-y-1.5 text-sm text-blue-800">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-0.5">•</span>
-                  <span>New showings are automatically added to your Google Calendar</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-0.5">•</span>
-                  <span>Rescheduled showings update the calendar event time</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-0.5">•</span>
-                  <span>Cancelled showings are removed from your calendar</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-0.5">•</span>
-                  <span>Each event includes client details and property information</span>
-                </li>
+                {STRINGS.settings.googleCalendarFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-0.5">•</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
               </ul>
             </div>
+          </div>
+        </div>
+
+        {/* Calendar Subscription Feed Section */}
+        <div className={STYLES.container.card}>
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className={cn(STYLES.text.h3, 'flex items-center gap-2')}>
+                <Calendar className="w-5 h-5 text-emerald-600" />
+                {STRINGS.settings.calendarFeedTitle}
+              </h2>
+              <p className={cn(STYLES.text.small, 'mt-1')}>
+                {STRINGS.settings.calendarFeedDescription}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Features */}
+            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+              <h3 className="text-sm font-semibold text-emerald-900 mb-2">Features</h3>
+              <ul className="space-y-1.5 text-sm text-emerald-800">
+                {STRINGS.settings.calendarFeedFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-emerald-600 mt-0.5">•</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Feed URL or Generate Button */}
+            {calendarFeedToken ? (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  {STRINGS.settings.calendarFeedUrlLabel}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`webcal://${(process.env.NEXT_PUBLIC_APP_URL || window.location.origin).replace(/^https?:\/\//, '')}/api/calendar/feed/${calendarFeedToken}`}
+                    className={cn(
+                      STYLES.input.base,
+                      STYLES.input.default,
+                      'flex-1 font-mono text-sm bg-gray-50'
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyFeedUrl}
+                    className={cn(
+                      STYLES.button.secondary,
+                      '!w-auto px-4 flex items-center gap-2'
+                    )}
+                  >
+                    {copiedFeedUrl ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        {STRINGS.settings.calendarFeedCopied}
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        {STRINGS.settings.calendarFeedCopyUrl}
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-600">
+                  Subscribe to this URL in any calendar app to view your showings. See instructions below.
+                </p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleGenerateFeedToken}
+                disabled={generatingFeedToken}
+                className={cn(
+                  'w-full py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium',
+                  'hover:bg-emerald-700 transition-colors',
+                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  'flex items-center justify-center gap-2'
+                )}
+              >
+                {generatingFeedToken ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  STRINGS.settings.calendarFeedGenerate
+                )}
+              </button>
+            )}
+
+            {/* How to Subscribe */}
+            {calendarFeedToken && (
+              <div className="border-t border-gray-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowFeedInstructions(!showFeedInstructions)}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  {STRINGS.settings.calendarFeedHowTo}
+                  <span className={cn(
+                    'ml-auto transition-transform',
+                    showFeedInstructions && 'rotate-180'
+                  )}>
+                    ▼
+                  </span>
+                </button>
+
+                {showFeedInstructions && (
+                  <div className="mt-4 space-y-4">
+                    {/* Apple Calendar (Mac) */}
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium text-sm text-gray-900 mb-2">
+                        {STRINGS.settings.calendarFeedInstructions.appleCalendar.title}
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                        {STRINGS.settings.calendarFeedInstructions.appleCalendar.steps.map((step, index) => (
+                          <li key={index}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    {/* Apple Calendar (iOS) */}
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium text-sm text-gray-900 mb-2">
+                        {STRINGS.settings.calendarFeedInstructions.appleCalendarIOS.title}
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                        {STRINGS.settings.calendarFeedInstructions.appleCalendarIOS.steps.map((step, index) => (
+                          <li key={index}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    {/* Google Calendar */}
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium text-sm text-gray-900 mb-2">
+                        {STRINGS.settings.calendarFeedInstructions.googleCalendar.title}
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                        {STRINGS.settings.calendarFeedInstructions.googleCalendar.steps.map((step, index) => (
+                          <li key={index}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    {/* Outlook */}
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium text-sm text-gray-900 mb-2">
+                        {STRINGS.settings.calendarFeedInstructions.outlook.title}
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                        {STRINGS.settings.calendarFeedInstructions.outlook.steps.map((step, index) => (
+                          <li key={index}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

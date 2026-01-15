@@ -291,6 +291,73 @@ export const STRINGS = {
     footerTextHint: 'Optional text to include at the end of confirmation emails',
     previewEmailButton: 'Preview Email',
     resetToDefaults: 'Reset to Defaults',
+
+    // Google Calendar Integration (Two-Way Sync)
+    googleCalendarTitle: 'Google Calendar Sync',
+    googleCalendarDescription: 'Automatic two-way sync with Google Calendar',
+    googleCalendarFeatures: [
+      'Showings automatically added to calendar',
+      'Updates sync in real-time',
+      'Changes in Showly update Google Calendar',
+    ],
+    googleCalendarConnected: 'Connected',
+    googleCalendarDisconnected: 'Not Connected',
+    googleCalendarConnect: 'Connect Google Calendar',
+    googleCalendarDisconnect: 'Disconnect',
+
+    // Calendar Subscription Feed (Read-Only)
+    calendarFeedTitle: 'Calendar Subscription',
+    calendarFeedDescription: 'Subscribe in Apple Calendar, Outlook, or any calendar app',
+    calendarFeedFeatures: [
+      'View your Showly schedule anywhere',
+      'Read-only (prevents accidental changes)',
+      'Works with any calendar app',
+    ],
+    calendarFeedUrlLabel: 'Your subscription URL:',
+    calendarFeedCopyUrl: 'Copy URL',
+    calendarFeedCopied: 'Copied!',
+    calendarFeedGenerate: 'Generate Feed URL',
+    calendarFeedHowTo: 'How to Subscribe',
+    calendarFeedInstructions: {
+      title: 'How to Subscribe to Your Calendar Feed',
+      appleCalendar: {
+        title: 'Apple Calendar (Mac)',
+        steps: [
+          'Open Calendar app',
+          'File → New Calendar Subscription',
+          'Paste your subscription URL',
+          'Click Subscribe',
+        ],
+      },
+      appleCalendarIOS: {
+        title: 'Apple Calendar (iPhone/iPad)',
+        steps: [
+          'Open Settings app',
+          'Calendar → Accounts → Add Account',
+          'Select "Other"',
+          'Tap "Add Subscribed Calendar"',
+          'Paste your subscription URL',
+        ],
+      },
+      googleCalendar: {
+        title: 'Google Calendar',
+        steps: [
+          'Open Google Calendar on web',
+          'Click "+" next to "Other calendars"',
+          'Select "From URL"',
+          'Paste your subscription URL',
+        ],
+      },
+      outlook: {
+        title: 'Microsoft Outlook',
+        steps: [
+          'Open Outlook Calendar',
+          'Add Calendar → From Internet',
+          'Paste your subscription URL',
+          'Click OK',
+        ],
+      },
+    },
   },
 
   // Showings
