@@ -132,20 +132,22 @@ export default function PropertiesPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className={STYLES.text.h2}>{STRINGS.properties.title}</h1>
-          <p className={cn(STYLES.text.small, 'mt-2')}>
-            {STRINGS.properties.subtitle}
-          </p>
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <h1 className={STYLES.text.h2}>{STRINGS.properties.title}</h1>
+            <p className={cn(STYLES.text.small, 'mt-2')}>
+              {STRINGS.properties.subtitle}
+            </p>
+          </div>
+          <Link
+            href="/dashboard/properties/new"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all sm:self-start"
+          >
+            <Plus className="w-5 h-5" />
+            {STRINGS.properties.addNew}
+          </Link>
         </div>
-        <Link
-          href="/dashboard/properties/new"
-          className="inline-flex items-center gap-2 px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          {STRINGS.properties.addNew}
-        </Link>
       </div>
 
       {/* Filters and Search */}
@@ -187,11 +189,11 @@ export default function PropertiesPage() {
             </div>
 
             {/* Status Filter */}
-            <div className="inline-flex rounded-lg border border-gray-300 bg-white h-10">
+            <div className="inline-flex rounded-lg border border-gray-300 bg-white h-10 w-full sm:w-auto">
               <button
                 onClick={() => setFilterStatus('all')}
                 className={cn(
-                  'px-4 rounded-l-lg text-sm font-medium transition-all',
+                  'flex-1 sm:flex-none px-3 sm:px-4 rounded-l-lg text-sm font-medium transition-all',
                   filterStatus === 'all'
                     ? 'bg-blue-600 text-white'
                     : 'text-gray-700 hover:bg-gray-50'
@@ -202,7 +204,7 @@ export default function PropertiesPage() {
               <button
                 onClick={() => setFilterStatus('active')}
                 className={cn(
-                  'px-4 border-x border-gray-300 text-sm font-medium transition-all',
+                  'flex-1 sm:flex-none px-3 sm:px-4 border-x border-gray-300 text-sm font-medium transition-all',
                   filterStatus === 'active'
                     ? 'bg-emerald-600 text-white'
                     : 'text-gray-700 hover:bg-gray-50'
@@ -213,7 +215,7 @@ export default function PropertiesPage() {
               <button
                 onClick={() => setFilterStatus('inactive')}
                 className={cn(
-                  'px-4 rounded-r-lg text-sm font-medium transition-all',
+                  'flex-1 sm:flex-none px-3 sm:px-4 rounded-r-lg text-sm font-medium transition-all',
                   filterStatus === 'inactive'
                     ? 'bg-gray-600 text-white'
                     : 'text-gray-700 hover:bg-gray-50'
