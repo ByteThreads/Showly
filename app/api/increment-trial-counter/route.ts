@@ -7,8 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,11 +23,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get agent document
-    const agentRef = doc(db, 'agents', agentId);
-    const agentDoc = await getDoc(agentRef);
+    // Get agent document using Admin SDK
+    const agentRef = adminDb.collection('agents').doc(agentId);
+    const agentDoc = await agentRef.get();
 
-    if (!agentDoc.exists()) {
+    if (!agentDoc.exists) {
       console.error('[Trial Counter API] Agent not found:', agentId);
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -36,12 +36,20 @@ export async function POST(request: NextRequest) {
     }
 
     const agent = agentDoc.data();
+    if (!agent) {
+      console.error('[Trial Counter API] Agent data is null:', agentId);
+      return NextResponse.json(
+        { error: 'Agent data not found' },
+        { status: 404 }
+      );
+    }
+
     console.log('[Trial Counter API] Agent status:', agent.subscriptionStatus, 'Current count:', agent.trialShowingsCount || 0);
 
     // Only increment if agent is on trial
     if (agent.subscriptionStatus === 'trial') {
-      await updateDoc(agentRef, {
-        trialShowingsCount: increment(1),
+      await agentRef.update({
+        trialShowingsCount: FieldValue.increment(1),
         updatedAt: new Date(),
       });
 
