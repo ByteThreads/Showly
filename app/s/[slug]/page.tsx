@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { collection, query, where, getDocs, addDoc, Timestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, Timestamp, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { posthog } from '@/lib/posthog';
 import { STRINGS } from '@/lib/constants/strings';
@@ -378,26 +378,19 @@ export default function BookingPage() {
         updatedAt: Timestamp.now(),
       });
 
-      // Increment trial showing counter via server-side API
-      // (Client can't update agent document due to security rules)
+      // Increment trial showing counter
+      // Uses special security rule that allows unauthenticated increment for trial agents
       if (agent.subscriptionStatus === 'trial') {
         try {
           console.log('[Trial Counter] Incrementing trial counter for agent:', agent.id);
-          const response = await fetch('/api/increment-trial-counter', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ agentId: agent.id }),
+          const agentRef = doc(db, 'agents', agent.id);
+          await updateDoc(agentRef, {
+            trialShowingsCount: increment(1),
+            updatedAt: new Date(),
           });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('[Trial Counter] API error:', errorData);
-          } else {
-            const data = await response.json();
-            console.log('[Trial Counter] Success:', data);
-          }
+          console.log('[Trial Counter] Successfully incremented trial counter');
         } catch (trialCounterError) {
-          console.error('[Trial Counter] Request failed:', trialCounterError);
+          console.error('[Trial Counter] Failed to increment:', trialCounterError);
           // Don't fail the booking if counter update fails
         }
       }
