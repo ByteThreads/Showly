@@ -447,13 +447,8 @@ export const STRINGS = {
     trial: {
       title: 'Free Trial',
       duration: '14 days',
-      showingLimit: '3 showings',
-      description: 'Try Showly free for 14 days or 3 showings, whichever comes first',
+      description: 'Try Showly free for 14 days with unlimited showings',
       noCreditCard: 'No credit card required',
-      expiredShowingsLimit: {
-        title: 'You\'ve Used All 3 Trial Showings!',
-        description: 'Great job booking showings with Showly! To continue scheduling unlimited showings, upgrade to a paid plan.',
-      },
       expiredTimeLimit: {
         title: 'Your 14-Day Trial Has Ended',
         description: 'Your trial period is complete. Upgrade now to continue using Showly and keep booking showings.',
@@ -466,7 +461,6 @@ export const STRINGS = {
       selectPlan: 'Select a plan to continue',
       upgradeButton: 'Upgrade Now',
       remainingDays: (days: number) => `${days} day${days === 1 ? '' : 's'} left in trial`,
-      remainingShowings: (count: number) => `${count} showing${count === 1 ? '' : 's'} left in trial`,
     },
   },
 

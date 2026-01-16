@@ -11,7 +11,7 @@ export function hasActiveSubscription(agent: Agent | null): boolean {
 }
 
 /**
- * Check if agent is currently in trial period
+ * Check if agent is currently in trial period (14 days, unlimited showings)
  */
 export function isInTrial(agent: Agent | null): boolean {
   if (!agent || agent.subscriptionStatus !== 'trial') return false;
@@ -27,11 +27,6 @@ export function isInTrial(agent: Agent | null): boolean {
     }
   }
 
-  // Check if trial has reached 3 showings limit
-  if ((agent.trialShowingsCount || 0) >= 3) {
-    return false; // Trial expired by usage
-  }
-
   return true;
 }
 
@@ -41,14 +36,6 @@ export function isInTrial(agent: Agent | null): boolean {
 export function isTrialExpired(agent: Agent | null): boolean {
   if (!agent || agent.subscriptionStatus !== 'trial') return false;
   return !isInTrial(agent);
-}
-
-/**
- * Get remaining trial showings (0-3)
- */
-export function getRemainingTrialShowings(agent: Agent | null): number {
-  if (!agent || !isInTrial(agent)) return 0;
-  return Math.max(0, 3 - (agent.trialShowingsCount || 0));
 }
 
 /**
@@ -67,15 +54,10 @@ export function getRemainingTrialDays(agent: Agent | null): number {
 
 /**
  * Get the reason why trial expired
- * Returns 'showings_limit', 'time_limit', or null if not expired
+ * Returns 'time_limit' or null if not expired
  */
-export function getTrialExpirationReason(agent: Agent | null): 'showings_limit' | 'time_limit' | null {
+export function getTrialExpirationReason(agent: Agent | null): 'time_limit' | null {
   if (!agent || agent.subscriptionStatus !== 'trial') return null;
-
-  // Check showings limit first (takes priority)
-  if ((agent.trialShowingsCount || 0) >= 3) {
-    return 'showings_limit';
-  }
 
   // Check time limit
   if (agent.trialStartDate) {

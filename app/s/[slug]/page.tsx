@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { collection, query, where, getDocs, addDoc, Timestamp, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { posthog } from '@/lib/posthog';
 import { STRINGS } from '@/lib/constants/strings';
@@ -377,23 +377,6 @@ export default function BookingPage() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
-
-      // Increment trial showing counter
-      // Uses special security rule that allows unauthenticated increment for trial agents
-      if (agent.subscriptionStatus === 'trial') {
-        try {
-          console.log('[Trial Counter] Incrementing trial counter for agent:', agent.id);
-          const agentRef = doc(db, 'agents', agent.id);
-          await updateDoc(agentRef, {
-            trialShowingsCount: increment(1),
-            updatedAt: new Date(),
-          });
-          console.log('[Trial Counter] Successfully incremented trial counter');
-        } catch (trialCounterError) {
-          console.error('[Trial Counter] Failed to increment:', trialCounterError);
-          // Don't fail the booking if counter update fails
-        }
-      }
 
       // Send confirmation emails
       try {

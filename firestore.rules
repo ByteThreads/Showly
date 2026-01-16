@@ -1,46 +1,32 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Agents can read/write their own data
-    // Special exception: allow incrementing trial counter from booking page
-    match /agents/{agentId} {
-      // Normal authenticated access
-      allow read, write: if request.auth != null && request.auth.uid == agentId;
-
-      // Allow unauthenticated trial counter increment (secure, specific operation)
-      allow update: if
-        // Only allow updates to these specific fields
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trialShowingsCount', 'updatedAt']) &&
-        // Only allow incrementing by exactly 1
-        request.resource.data.trialShowingsCount == resource.data.trialShowingsCount + 1 &&
-        // Only if agent is on trial
-        resource.data.subscriptionStatus == 'trial' &&
-        // Trial counter must not exceed limit
-        request.resource.data.trialShowingsCount <= 3;
-    }
-
-    // Properties - agents can CRUD their own
+    // Properties are publicly readable (for booking pages)
     match /properties/{propertyId} {
-      allow read: if true;  // Public read for booking pages
-      allow create, update, delete: if request.auth != null &&
-        request.resource.data.agentId == request.auth.uid;
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.agentId;
     }
 
-    // Showings - agents can read their own, clients can create
+    // Agents - PUBLIC READ for booking pages, auth write
+    match /agents/{agentId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == agentId;
+    }
+
+    // Showings - PUBLIC CREATE for booking, authenticated for updates
     match /showings/{showingId} {
-      allow read: if request.auth != null &&
-        resource.data.agentId == request.auth.uid;
-      allow create: if true;  // Public create for booking
+      allow read: if true; // Anyone can read (for availability)
+      allow create: if true; // Anyone can book a showing
       allow update, delete: if request.auth != null &&
-        resource.data.agentId == request.auth.uid;
+        request.auth.uid == resource.data.agentId;
     }
 
-    // Feedback - public create, agents can read their own
+    // Feedback
     match /feedback/{feedbackId} {
-      allow read: if request.auth != null &&
-        resource.data.agentId == request.auth.uid;
-      allow create: if true;  // Clients can submit feedback
+      allow create: if true; // Anyone can leave feedback
+      allow read, update, delete: if request.auth != null &&
+        request.auth.uid == resource.data.agentId;
     }
   }
 }

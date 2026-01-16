@@ -9,7 +9,6 @@ import {
   hasActiveSubscription,
   isInTrial,
   getRemainingTrialDays,
-  getRemainingTrialShowings,
   getSubscriptionDisplayName,
   getSubscriptionBadgeColor,
   isFounderCustomer,
@@ -126,15 +125,9 @@ export default function BillingPage() {
 
           <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5 border border-white/80 shadow-sm">
             {inTrial && (
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 text-blue-700">
-                  <Clock className="w-4 h-4" />
-                  <span className="font-medium">{STRINGS.pricing.upgrade.remainingDays(getRemainingTrialDays(agent))}</span>
-                </div>
-                <div className="flex items-center gap-2 text-emerald-700">
-                  <Zap className="w-4 h-4" />
-                  <span className="font-medium">{STRINGS.pricing.upgrade.remainingShowings(getRemainingTrialShowings(agent))}</span>
-                </div>
+              <div className="flex items-center gap-2 text-sm text-blue-700">
+                <Clock className="w-4 h-4" />
+                <span className="font-medium">{STRINGS.pricing.upgrade.remainingDays(getRemainingTrialDays(agent))}</span>
               </div>
             )}
 
@@ -242,23 +235,14 @@ export default function BillingPage() {
             <h3 className="text-2xl font-bold text-gray-900">Free Trial Active</h3>
           </div>
           <p className="text-gray-600 mb-6">
-            Your trial will end when you reach 14 days or 3 showings, whichever comes first.
+            Your trial lasts for 14 days with unlimited showings. No credit card required.
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-5 h-5 text-blue-600" />
-                <p className="text-sm font-medium text-gray-600">Days Remaining</p>
-              </div>
-              <p className="text-4xl font-bold text-gray-900">{getRemainingTrialDays(agent)}</p>
+          <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 max-w-xs">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-6 h-6 text-blue-600" />
+              <p className="text-base font-medium text-gray-700">Days Remaining</p>
             </div>
-            <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="w-5 h-5 text-blue-600" />
-                <p className="text-sm font-medium text-gray-600">Showings Remaining</p>
-              </div>
-              <p className="text-4xl font-bold text-gray-900">{getRemainingTrialShowings(agent)}</p>
-            </div>
+            <p className="text-5xl font-bold text-gray-900">{getRemainingTrialDays(agent)}</p>
           </div>
         </div>
       )}
