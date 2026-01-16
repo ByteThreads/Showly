@@ -283,7 +283,7 @@ export default function PaywallModal({
               {/* Standard Plan */}
               <div className={cn(
                 "relative bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-blue-300 hover:border-blue-500 transition-all duration-300",
-                founderSpotsRemaining > 0 && "hover:scale-105"
+                (founderSpotsRemaining ?? 0) > 0 && "hover:scale-105"
               )}>
                 <div className="p-8">
                   <div className="flex items-center gap-2 mb-4">
