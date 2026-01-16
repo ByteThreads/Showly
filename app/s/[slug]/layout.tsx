@@ -4,12 +4,12 @@ import { db } from '@/lib/firebase';
 import type { Property, Agent } from '@/types/database';
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
   children: React.ReactNode;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = params;
+  const { slug } = await params;
 
   try {
     // Fetch property by slug
