@@ -2,10 +2,11 @@
 
 import { useAuth } from '@/lib/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES } from '@/lib/constants/styles';
-import { needsUpgrade, getTrialExpirationReason } from '@/lib/utils/subscription';
+import { needsUpgrade } from '@/lib/utils/subscription';
+import PaywallModal from './PaywallModal';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
   const { user, agent, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -31,13 +33,12 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
       const isAllowedPath = allowedPaths.some(path => pathname?.startsWith(path));
 
       if (!isAllowedPath && needsUpgrade(agent)) {
-        // Determine why they need to upgrade
-        const reason = getTrialExpirationReason(agent);
-        const redirectUrl = reason ? `/pricing?reason=${reason}` : '/pricing';
-        router.push(redirectUrl);
+        setShowPaywall(true);
+      } else {
+        setShowPaywall(false);
       }
     }
-  }, [user, agent, loading, requireSubscription, router, pathname]);
+  }, [user, agent, loading, requireSubscription, pathname]);
 
   // Show loading state while checking auth
   if (loading) {
@@ -56,14 +57,25 @@ export default function ProtectedRoute({ children, requireSubscription = true }:
     return null;
   }
 
-  // Don't render if subscription required but user needs to upgrade
-  // (unless they're on an allowed path)
+  // Show paywall modal if subscription required but user needs to upgrade
   if (requireSubscription && agent) {
     const allowedPaths = ['/dashboard/billing', '/pricing'];
     const isAllowedPath = allowedPaths.some(path => pathname?.startsWith(path));
 
     if (!isAllowedPath && needsUpgrade(agent)) {
-      return null;
+      return (
+        <>
+          {/* Render children in background (blurred) */}
+          <div className="filter blur-sm pointer-events-none">
+            {children}
+          </div>
+          {/* Show paywall modal */}
+          <PaywallModal
+            isOpen={showPaywall}
+            variant="trial_expired"
+          />
+        </>
+      );
     }
   }
 

@@ -13,6 +13,7 @@ import { useGooglePlaces } from '@/lib/hooks/useGooglePlaces';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 import { US_STATES } from '@/lib/constants/us-states';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { CreatePropertyInput } from '@/types/database';
 
 export default function NewPropertyPage() {
@@ -407,7 +408,7 @@ export default function NewPropertyPage() {
             </div>
 
             {/* Description (Full width) */}
-            <div className="col-span-2">
+            <div className="col-span-2 mt-6 mb-6">
               <label htmlFor="description" className={STYLES.label.default}>
                 Property Description <span className="text-gray-500 font-normal">(Optional)</span>
               </label>
@@ -427,114 +428,113 @@ export default function NewPropertyPage() {
             </div>
 
             {/* MLS Number */}
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="mlsNumber" className={STYLES.label.default}>
-                  {STRINGS.properties.form.mlsLabel}
-                </label>
-                <input
-                  id="mlsNumber"
-                  name="mlsNumber"
-                  type="text"
-                  value={formData.mlsNumber}
-                  onChange={handleChange}
-                  className={cn(STYLES.input.base, STYLES.input.default)}
-                  placeholder={STRINGS.properties.form.mlsPlaceholder}
-                />
-              </div>
+            <div>
+              <label htmlFor="mlsNumber" className={STYLES.label.default}>
+                {STRINGS.properties.form.mlsLabel}
+              </label>
+              <input
+                id="mlsNumber"
+                name="mlsNumber"
+                type="text"
+                value={formData.mlsNumber}
+                onChange={handleChange}
+                className={cn(STYLES.input.base, STYLES.input.default)}
+                placeholder={STRINGS.properties.form.mlsPlaceholder}
+              />
+            </div>
 
-              <div className="md:col-span-2">
-                <label className={STYLES.label.default}>
-                  {STRINGS.properties.form.photoLabel}
-                  {photoUrls.length > 0 && (
-                    <span className="ml-2 text-sm text-gray-500">
-                      ({STRINGS.properties.form.photoCount(photoUrls.length)})
-                    </span>
-                  )}
-                </label>
-
-                {/* Photos Grid */}
+            {/* Property Photos */}
+            <div className="mt-6">
+              <label className={STYLES.label.default}>
+                {STRINGS.properties.form.photoLabel}
                 {photoUrls.length > 0 && (
-                  <div className="mb-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {photoUrls.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Property photo ${index + 1}`}
-                          className="w-full h-48 object-cover rounded-lg border-2 border-gray-300"
-                        />
-                        {index === 0 && (
-                          <span className="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
-                            {STRINGS.properties.form.photoPrimary}
-                          </span>
-                        )}
+                  <span className="ml-2 text-sm text-gray-500">
+                    ({STRINGS.properties.form.photoCount(photoUrls.length)})
+                  </span>
+                )}
+              </label>
 
-                        {/* Photo Controls */}
-                        <div className="absolute top-2 right-2 flex gap-1">
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => handleMovePhotoUp(index)}
-                              className="p-1.5 bg-gray-800 bg-opacity-70 text-white rounded hover:bg-opacity-90"
-                              title="Move up"
-                            >
-                              {STRINGS.properties.form.photoMoveUp}
-                            </button>
-                          )}
-                          {index < photoUrls.length - 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleMovePhotoDown(index)}
-                              className="p-1.5 bg-gray-800 bg-opacity-70 text-white rounded hover:bg-opacity-90"
-                              title="Move down"
-                            >
-                              {STRINGS.properties.form.photoMoveDown}
-                            </button>
-                          )}
+              {/* Photos Grid */}
+              {photoUrls.length > 0 && (
+                <div className="mb-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {photoUrls.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Property photo ${index + 1}`}
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-300"
+                      />
+                      {index === 0 && (
+                        <span className="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
+                          {STRINGS.properties.form.photoPrimary}
+                        </span>
+                      )}
+
+                      {/* Photo Controls */}
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        {index > 0 && (
                           <button
                             type="button"
-                            onClick={() => handleRemovePhoto(index)}
-                            className="p-1.5 bg-red-600 bg-opacity-70 text-white rounded hover:bg-opacity-90"
-                            title="Remove"
+                            onClick={() => handleMovePhotoUp(index)}
+                            className="w-8 h-8 flex items-center justify-center bg-white text-gray-700 rounded-full shadow-lg hover:bg-gray-50 active:scale-95 md:hover:scale-110 transition-all border border-gray-200"
+                            title="Move left"
                           >
-                            ✕
+                            <ChevronLeft className="w-4 h-4" />
                           </button>
-                        </div>
+                        )}
+                        {index < photoUrls.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleMovePhotoDown(index)}
+                            className="w-8 h-8 flex items-center justify-center bg-white text-gray-700 rounded-full shadow-lg hover:bg-gray-50 active:scale-95 md:hover:scale-110 transition-all border border-gray-200"
+                            title="Move right"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(index)}
+                          className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 active:scale-95 md:hover:scale-110 transition-all"
+                          title="Remove photo"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                {/* File Upload */}
-                <div className="space-y-4">
-                  <div>
-                    <input
-                      id="photoFile"
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
-                      multiple
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="photoFile"
-                      className={cn(
-                        'cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium',
-                        'text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
-                        (uploading || loadingPreviews) && 'opacity-50 cursor-not-allowed'
-                      )}
-                    >
-                      {loadingPreviews
-                        ? 'Loading previews...'
-                        : uploading
-                        ? STRINGS.properties.form.photoUploading
-                        : STRINGS.properties.form.photoUploadButton
-                      }
-                    </label>
-                    <p className={cn(STYLES.text.tiny, 'mt-1')}>
-                      JPG, PNG, or WebP (max 5MB each). Select multiple files to upload at once.
-                    </p>
-                  </div>
+              {/* File Upload */}
+              <div className="space-y-4">
+                <div>
+                  <input
+                    id="photoFile"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="photoFile"
+                    className={cn(
+                      'cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium',
+                      'text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+                      (uploading || loadingPreviews) && 'opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    {loadingPreviews
+                      ? 'Loading previews...'
+                      : uploading
+                      ? STRINGS.properties.form.photoUploading
+                      : STRINGS.properties.form.photoUploadButton
+                    }
+                  </label>
+                  <p className={cn(STYLES.text.tiny, 'mt-1')}>
+                    JPG, PNG, or WebP (max 5MB each). Select multiple files to upload at once.
+                  </p>
                 </div>
               </div>
             </div>

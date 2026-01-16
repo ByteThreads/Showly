@@ -11,6 +11,7 @@ import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
 import { Home, Calendar, TrendingUp, Plus, ArrowRight, X, Sparkles, Clock, Bell, AlertCircle, Users, BarChart3, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Property, Showing } from '@/types/database';
+import TrialCountdown from '@/components/TrialCountdown';
 
 interface ShowingWithProperty extends Showing {
   property?: Property;
@@ -362,6 +363,9 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Trial Countdown Banner */}
+      <TrialCountdown />
+
       {/* Personalized Greeting */}
       <div className="mb-8 bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
         <h1 className="text-3xl font-bold mb-2 text-gray-900">

@@ -276,7 +276,7 @@ export default function BillingPage() {
         <p className="text-gray-600">
           Need help?{' '}
           <a
-            href="mailto:support@showly.app"
+            href="mailto:contact@bytethreadsllc.com"
             className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
           >
             Contact support

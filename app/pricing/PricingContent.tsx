@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { posthog } from '@/lib/posthog';
 import { STRINGS } from '@/lib/constants/strings';
 import { STYLES, cn } from '@/lib/constants/styles';
+import { Clock, Users, Zap, Sparkles, TrendingUp } from 'lucide-react';
 
 export default function PricingContent() {
   const router = useRouter();
@@ -83,13 +84,13 @@ export default function PricingContent() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
             {STRINGS.pricing.title}
           </h1>
-          <p className="text-xl text-gray-600 mb-2">
+          <p className="text-2xl text-gray-600 mb-4">
             {STRINGS.pricing.subtitle}
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-lg text-gray-500">
             {STRINGS.pricing.trial.description}
           </p>
         </div>
@@ -265,6 +266,47 @@ export default function PricingContent() {
           </div>
         </div>
 
+        {/* Benefits Section */}
+        <div className="mt-12 mb-8">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-2xl p-8">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full text-blue-800 text-sm font-semibold mb-4">
+                <Sparkles className="w-4 h-4" />
+                Why Agents Love Showly
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Automated Showing Management
+              </h2>
+              <p className="text-xl text-gray-700">
+                Let clients book showings 24/7 while you focus on closing deals
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl p-4 text-center shadow-md border border-gray-100">
+                <Clock className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-gray-900">24/7</div>
+                <div className="text-sm text-gray-600">Auto Booking</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 text-center shadow-md border border-gray-100">
+                <Zap className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-gray-900">Instant</div>
+                <div className="text-sm text-gray-600">Confirmations</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 text-center shadow-md border border-gray-100">
+                <Users className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-gray-900">Easy</div>
+                <div className="text-sm text-gray-600">Client Booking</div>
+              </div>
+              <div className="bg-white rounded-xl p-4 text-center shadow-md border border-gray-100">
+                <TrendingUp className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-gray-900">Smart</div>
+                <div className="text-sm text-gray-600">Scheduling</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Trial Info */}
         <div className="mt-12 max-w-3xl mx-auto">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
@@ -293,6 +335,7 @@ export default function PricingContent() {
             </ul>
           </div>
         </div>
+
       </div>
     </div>
   );

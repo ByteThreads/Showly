@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { STRINGS } from '@/lib/constants/strings';
 import { useEffect, useState, useRef } from 'react';
 import { Link as LinkIcon, Calendar, Bell, Home, Clock, Mail, Smartphone, Palette } from 'lucide-react';
+import { OrganizationSchema, SoftwareAppSchema } from '@/components/StructuredData';
 
 // Hero Rotating Cards Component
 function HeroRotatingCards() {
@@ -557,6 +558,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Structured Data for SEO */}
+      <OrganizationSchema />
+      <SoftwareAppSchema />
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-slate-50 via-white to-emerald-50 pt-32 pb-48 overflow-hidden">
         {/* Animated background house shapes */}
