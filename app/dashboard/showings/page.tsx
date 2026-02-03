@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/auth-context';
+import { usePaywall } from '@/lib/hooks/usePaywall';
 import { db } from '@/lib/firebase';
 import { posthog } from '@/lib/posthog';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -37,6 +38,7 @@ type SortOption = 'date-desc' | 'date-asc' | 'property' | 'client' | 'status';
 
 export default function ShowingsPage() {
   const { agent } = useAuth();
+  const { withPaywallCheck, PaywallComponent, isReadOnly } = usePaywall();
   const searchParams = useSearchParams();
   const [showings, setShowings] = useState<ShowingData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -660,8 +662,9 @@ export default function ShowingsPage() {
 
                         {showing.status !== 'cancelled' && showing.status !== 'completed' && showing.status !== 'no-show' && (
                           <button
-                            onClick={() => openRescheduleModal(showing)}
-                            className={cn(STYLES.button.action.base, STYLES.button.action.reschedule)}
+                            onClick={withPaywallCheck(() => openRescheduleModal(showing))}
+                            disabled={isReadOnly}
+                            className={cn(STYLES.button.action.base, STYLES.button.action.reschedule, isReadOnly && 'opacity-50 cursor-not-allowed')}
                           >
                             {STRINGS.showings.actions.reschedule}
                           </button>
@@ -680,9 +683,9 @@ export default function ShowingsPage() {
 
                       {showing.status === 'scheduled' && (
                         <button
-                          onClick={() => updateShowingStatus(showing.id, 'confirmed')}
-                          disabled={updatingId === showing.id}
-                          className={cn(STYLES.button.action.base, STYLES.button.action.confirm, 'text-xs py-1.5')}
+                          onClick={withPaywallCheck(() => updateShowingStatus(showing.id, 'confirmed'))}
+                          disabled={updatingId === showing.id || isReadOnly}
+                          className={cn(STYLES.button.action.base, STYLES.button.action.confirm, 'text-xs py-1.5', isReadOnly && 'opacity-50 cursor-not-allowed')}
                         >
                           {updatingId === showing.id ? STRINGS.showings.actions.updating : STRINGS.showings.actions.confirm}
                         </button>
@@ -690,9 +693,9 @@ export default function ShowingsPage() {
 
                       {(showing.status === 'scheduled' || showing.status === 'confirmed') && (
                         <button
-                          onClick={() => updateShowingStatus(showing.id, 'completed')}
-                          disabled={updatingId === showing.id}
-                          className={cn(STYLES.button.action.base, STYLES.button.action.complete, 'text-xs py-1.5')}
+                          onClick={withPaywallCheck(() => updateShowingStatus(showing.id, 'completed'))}
+                          disabled={updatingId === showing.id || isReadOnly}
+                          className={cn(STYLES.button.action.base, STYLES.button.action.complete, 'text-xs py-1.5', isReadOnly && 'opacity-50 cursor-not-allowed')}
                         >
                           {updatingId === showing.id ? STRINGS.showings.actions.updating : STRINGS.showings.actions.complete}
                         </button>
@@ -700,13 +703,13 @@ export default function ShowingsPage() {
 
                       {showing.status !== 'cancelled' && showing.status !== 'completed' && (
                         <button
-                          onClick={() => {
+                          onClick={withPaywallCheck(() => {
                             if (confirm(STRINGS.showings.actions.cancelConfirm)) {
                               updateShowingStatus(showing.id, 'cancelled');
                             }
-                          }}
-                          disabled={updatingId === showing.id}
-                          className={cn(STYLES.button.action.base, STYLES.button.action.cancel, 'text-xs py-1.5')}
+                          })}
+                          disabled={updatingId === showing.id || isReadOnly}
+                          className={cn(STYLES.button.action.base, STYLES.button.action.cancel, 'text-xs py-1.5', isReadOnly && 'opacity-50 cursor-not-allowed')}
                         >
                           {updatingId === showing.id ? STRINGS.showings.actions.updating : STRINGS.showings.actions.cancel}
                         </button>
@@ -714,9 +717,9 @@ export default function ShowingsPage() {
 
                       {showing.scheduledAt.toDate() < new Date() && showing.status !== 'completed' && showing.status !== 'cancelled' && (
                         <button
-                          onClick={() => updateShowingStatus(showing.id, 'no-show')}
-                          disabled={updatingId === showing.id}
-                          className={cn(STYLES.button.action.base, STYLES.button.action.noShow, 'text-xs py-1.5')}
+                          onClick={withPaywallCheck(() => updateShowingStatus(showing.id, 'no-show'))}
+                          disabled={updatingId === showing.id || isReadOnly}
+                          className={cn(STYLES.button.action.base, STYLES.button.action.noShow, 'text-xs py-1.5', isReadOnly && 'opacity-50 cursor-not-allowed')}
                         >
                           {updatingId === showing.id ? STRINGS.showings.actions.updating : STRINGS.showings.actions.noShow}
                         </button>
@@ -724,8 +727,9 @@ export default function ShowingsPage() {
 
                       {showing.status !== 'cancelled' && showing.status !== 'completed' && showing.status !== 'no-show' && (
                         <button
-                          onClick={() => openRescheduleModal(showing)}
-                          className={cn(STYLES.button.action.base, STYLES.button.action.reschedule, 'text-xs py-1.5')}
+                          onClick={withPaywallCheck(() => openRescheduleModal(showing))}
+                          disabled={isReadOnly}
+                          className={cn(STYLES.button.action.base, STYLES.button.action.reschedule, 'text-xs py-1.5', isReadOnly && 'opacity-50 cursor-not-allowed')}
                         >
                           {STRINGS.showings.actions.reschedule}
                         </button>
@@ -829,6 +833,9 @@ export default function ShowingsPage() {
           </div>
         </div>
       )}
+
+      {/* Paywall Modal */}
+      {PaywallComponent}
     </div>
   );
 }

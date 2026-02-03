@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { usePaywall } from '@/lib/hooks/usePaywall';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { posthog } from '@/lib/posthog';
@@ -19,6 +20,14 @@ import type { CreatePropertyInput } from '@/types/database';
 export default function NewPropertyPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { isReadOnly } = usePaywall();
+
+  // Redirect if read-only (trial expired)
+  useEffect(() => {
+    if (isReadOnly) {
+      router.push('/dashboard/properties');
+    }
+  }, [isReadOnly, router]);
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { usePaywall } from '@/lib/hooks/usePaywall';
 import { collection, query, where, getDocs, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { posthog } from '@/lib/posthog';
@@ -12,7 +14,9 @@ import type { Property } from '@/types/database';
 import { Home, BedDouble, Bath, Ruler, Search, SlidersHorizontal, Plus, ChevronDown } from 'lucide-react';
 
 export default function PropertiesPage() {
+  const router = useRouter();
   const { user } = useAuth();
+  const { withPaywallCheck, PaywallComponent, isReadOnly } = usePaywall();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -140,13 +144,19 @@ export default function PropertiesPage() {
               {STRINGS.properties.subtitle}
             </p>
           </div>
-          <Link
-            href="/dashboard/properties/new"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all sm:self-start"
+          <button
+            onClick={withPaywallCheck(() => router.push('/dashboard/properties/new'))}
+            disabled={isReadOnly}
+            className={cn(
+              "inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white transition-all sm:self-start",
+              isReadOnly
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            )}
           >
             <Plus className="w-5 h-5" />
             {STRINGS.properties.addNew}
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -246,12 +256,16 @@ export default function PropertiesPage() {
             <p className={cn(STYLES.text.small, 'mt-2 mb-6')}>
               {STRINGS.properties.createFirst}
             </p>
-            <Link
-              href="/dashboard/properties/new"
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
+            <button
+              onClick={withPaywallCheck(() => router.push('/dashboard/properties/new'))}
+              disabled={isReadOnly}
+              className={cn(
+                "inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white",
+                isReadOnly ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+              )}
             >
               {STRINGS.properties.addNew}
-            </Link>
+            </button>
           </div>
         </div>
       ) : filteredAndSortedProperties.length === 0 ? (
@@ -327,11 +341,11 @@ export default function PropertiesPage() {
 
                     {/* Status Toggle */}
                     <button
-                      onClick={() => togglePropertyStatus(property.id, property.status)}
-                      disabled={updatingId === property.id}
+                      onClick={withPaywallCheck(() => togglePropertyStatus(property.id, property.status))}
+                      disabled={updatingId === property.id || isReadOnly}
                       className={cn(
                         'px-3 py-1.5 text-xs font-medium rounded-md transition-all border-2 whitespace-nowrap',
-                        updatingId === property.id && 'opacity-50 cursor-not-allowed',
+                        (updatingId === property.id || isReadOnly) && 'opacity-50 cursor-not-allowed',
                         property.status === 'active'
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                           : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
@@ -369,20 +383,26 @@ export default function PropertiesPage() {
                 </div>
 
                 {/* Edit Button */}
-                <Link
-                  href={`/dashboard/properties/${property.id}/edit`}
+                <button
+                  onClick={withPaywallCheck(() => router.push(`/dashboard/properties/${property.id}/edit`))}
+                  disabled={isReadOnly}
                   className={cn(
-                    'mt-3 block text-center px-4 py-2 text-sm font-medium rounded-md transition-all',
-                    'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                    'mt-3 w-full text-center px-4 py-2 text-sm font-medium rounded-md transition-all',
+                    isReadOnly
+                      ? 'bg-gray-200 text-gray-400 border border-gray-200 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                   )}
                 >
                   {STRINGS.properties.edit}
-                </Link>
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Paywall Modal */}
+      {PaywallComponent}
     </div>
   );
 }
