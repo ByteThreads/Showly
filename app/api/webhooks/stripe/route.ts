@@ -9,11 +9,17 @@ import type { Agent } from '@/types/database';
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
+  console.log('[Stripe Webhook] Received POST request');
+  console.log('[Stripe Webhook] URL:', request.url);
+
   const body = await request.text();
   const headersList = await headers();
   const signature = headersList.get('stripe-signature');
 
+  console.log('[Stripe Webhook] Signature present:', !!signature);
+
   if (!signature) {
+    console.error('[Stripe Webhook] No signature provided');
     return NextResponse.json(
       { error: 'No signature provided' },
       { status: 400 }
@@ -24,15 +30,16 @@ export async function POST(request: NextRequest) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    console.log('[Stripe Webhook] Event verified successfully:', event.type);
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error('[Stripe Webhook] Signature verification failed:', err.message);
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
       { status: 400 }
     );
   }
 
-  console.log('Stripe webhook event:', event.type);
+  console.log('[Stripe Webhook] Processing event:', event.type);
 
   try {
     switch (event.type) {
@@ -71,9 +78,10 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled event type: ${event.type}`);
     }
 
+    console.log('[Stripe Webhook] Successfully processed event:', event.type);
     return NextResponse.json({ received: true });
   } catch (error: any) {
-    console.error('Error processing webhook:', error);
+    console.error('[Stripe Webhook] Error processing webhook:', error);
     return NextResponse.json(
       { error: error.message || 'Webhook processing failed' },
       { status: 500 }
@@ -208,6 +216,13 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
   const status = mapStripeStatus(subscription.status);
   const priceId = subscription.items.data[0]?.price.id;
 
+  console.log(`[Webhook] Updating agent ${agentId} subscription:`, {
+    stripeStatus: subscription.status,
+    mappedStatus: status,
+    priceId,
+    subscriptionId: subscription.id,
+  });
+
   await updateDoc(doc(db, 'agents', agentId), {
     subscriptionStatus: status,
     stripeSubscriptionId: subscription.id,
@@ -218,7 +233,7 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
     updatedAt: new Date(),
   });
 
-  console.log(`Updated subscription for agent ${agentId}: ${status}`);
+  console.log(`[Webhook] Successfully updated subscription for agent ${agentId}: ${status}`);
 }
 
 async function findAgentByStripeCustomer(customerId: string): Promise<Agent | null> {
