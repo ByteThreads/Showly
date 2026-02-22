@@ -16,7 +16,7 @@ import {
   GoogleAuthProvider as GoogleAuthProviderType,
   OAuthCredential
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { posthog } from './posthog';
 import type { Agent } from '@/types/database';
@@ -141,6 +141,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribe();
     };
   }, []);
+
+  // Real-time listener for agent document changes
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    console.log('[AuthContext] Setting up real-time agent listener for:', user.uid);
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'agents', user.uid),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          const agentData = {
+            id: docSnapshot.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.() || data.createdAt,
+            updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
+            trialStartDate: data.trialStartDate?.toDate?.() || data.trialStartDate,
+            subscriptionEndDate: data.subscriptionEndDate?.toDate?.() || data.subscriptionEndDate,
+          } as Agent;
+
+          console.log('[AuthContext] Agent data updated in real-time:', {
+            subscriptionStatus: agentData.subscriptionStatus,
+            stripeCustomerId: agentData.stripeCustomerId,
+            stripeSubscriptionId: agentData.stripeSubscriptionId,
+          });
+
+          setAgent(agentData);
+        }
+      },
+      (error) => {
+        console.error('[AuthContext] Error in agent listener:', error);
+      }
+    );
+
+    return () => {
+      console.log('[AuthContext] Cleaning up agent listener');
+      unsubscribe();
+    };
+  }, [user?.uid]);
 
   // Sign in existing user
   async function signIn(email: string, password: string) {
