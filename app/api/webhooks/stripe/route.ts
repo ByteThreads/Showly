@@ -168,6 +168,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const agentId = subscription.metadata?.agentId;
+  const currentPeriodEnd = (subscription as any).current_period_end as number | undefined;
 
   if (!agentId) {
     const customerId = subscription.customer as string;
@@ -182,8 +183,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       subscriptionStatus: 'cancelled',
       updatedAt: new Date(),
     };
-    if (subscription.current_period_end) {
-      updateData.subscriptionEndDate = new Date(subscription.current_period_end * 1000);
+    if (currentPeriodEnd) {
+      updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
     }
     await updateDoc(doc(db, 'agents', agentDoc.id), updateData);
   } else {
@@ -191,8 +192,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       subscriptionStatus: 'cancelled',
       updatedAt: new Date(),
     };
-    if (subscription.current_period_end) {
-      updateData.subscriptionEndDate = new Date(subscription.current_period_end * 1000);
+    if (currentPeriodEnd) {
+      updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
     }
     await updateDoc(doc(db, 'agents', agentId), updateData);
   }
@@ -237,13 +238,14 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 async function updateAgentSubscription(agentId: string, subscription: Stripe.Subscription) {
   const status = mapStripeStatus(subscription.status);
   const priceId = subscription.items.data[0]?.price.id;
+  const currentPeriodEnd = (subscription as any).current_period_end as number | undefined;
 
   console.log(`[Webhook] Updating agent ${agentId} subscription:`, {
     stripeStatus: subscription.status,
     mappedStatus: status,
     priceId,
     subscriptionId: subscription.id,
-    currentPeriodEnd: subscription.current_period_end,
+    currentPeriodEnd,
   });
 
   // Build update object, only include subscriptionEndDate if it exists
@@ -255,8 +257,8 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
   };
 
   // Only add subscriptionEndDate if current_period_end exists
-  if (subscription.current_period_end) {
-    updateData.subscriptionEndDate = new Date(subscription.current_period_end * 1000);
+  if (currentPeriodEnd) {
+    updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
   }
 
   await updateDoc(doc(db, 'agents', agentId), updateData);
