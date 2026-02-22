@@ -50,25 +50,48 @@ export default function DashboardPage() {
   useEffect(() => {
     const success = searchParams.get('success');
     if (success === 'true' && agent) {
+      console.log('[Checkout Success] Starting subscription status polling...');
+
+      // Check immediately if already updated
+      if (agent.subscriptionStatus === 'active' || agent.subscriptionStatus === 'trial') {
+        console.log('[Checkout Success] Subscription already active/trial:', agent.subscriptionStatus);
+        window.history.replaceState({}, '', '/dashboard');
+        return;
+      }
+
       // Poll every 2 seconds for up to 30 seconds to check if subscription updated
       let attempts = 0;
       const maxAttempts = 15;
 
       const pollInterval = setInterval(async () => {
         attempts++;
+        console.log(`[Checkout Success] Polling attempt ${attempts}/${maxAttempts}...`);
         await refreshAgent();
-
-        // Stop polling if subscription is active/trialing or max attempts reached
-        if (agent.subscriptionStatus === 'active' || agent.subscriptionStatus === 'trial' || attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          // Remove success param from URL
-          window.history.replaceState({}, '', '/dashboard');
-        }
       }, 2000);
 
-      return () => clearInterval(pollInterval);
+      // Cleanup interval after max attempts
+      const timeout = setTimeout(() => {
+        clearInterval(pollInterval);
+        console.log('[Checkout Success] Max polling attempts reached');
+        window.history.replaceState({}, '', '/dashboard');
+      }, maxAttempts * 2000);
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeout);
+      };
     }
   }, [searchParams, agent, refreshAgent]);
+
+  // Separate effect to detect when subscription status changes
+  useEffect(() => {
+    const success = searchParams.get('success');
+    if (success === 'true' && agent && (agent.subscriptionStatus === 'active' || agent.subscriptionStatus === 'trial')) {
+      console.log('[Checkout Success] Subscription activated! Status:', agent.subscriptionStatus);
+      // Remove success param from URL
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, [agent?.subscriptionStatus, searchParams]);
 
   useEffect(() => {
     if (!agent) return;
