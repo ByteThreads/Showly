@@ -178,21 +178,23 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       return;
     }
 
-    await updateDoc(doc(db, 'agents', agentDoc.id), {
+    const updateData: any = {
       subscriptionStatus: 'cancelled',
-      subscriptionEndDate: (subscription as any).current_period_end
-        ? new Date((subscription as any).current_period_end * 1000)
-        : undefined,
       updatedAt: new Date(),
-    });
+    };
+    if (subscription.current_period_end) {
+      updateData.subscriptionEndDate = new Date(subscription.current_period_end * 1000);
+    }
+    await updateDoc(doc(db, 'agents', agentDoc.id), updateData);
   } else {
-    await updateDoc(doc(db, 'agents', agentId), {
+    const updateData: any = {
       subscriptionStatus: 'cancelled',
-      subscriptionEndDate: (subscription as any).current_period_end
-        ? new Date((subscription as any).current_period_end * 1000)
-        : undefined,
       updatedAt: new Date(),
-    });
+    };
+    if (subscription.current_period_end) {
+      updateData.subscriptionEndDate = new Date(subscription.current_period_end * 1000);
+    }
+    await updateDoc(doc(db, 'agents', agentId), updateData);
   }
 }
 
@@ -241,17 +243,23 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
     mappedStatus: status,
     priceId,
     subscriptionId: subscription.id,
+    currentPeriodEnd: subscription.current_period_end,
   });
 
-  await updateDoc(doc(db, 'agents', agentId), {
+  // Build update object, only include subscriptionEndDate if it exists
+  const updateData: any = {
     subscriptionStatus: status,
     stripeSubscriptionId: subscription.id,
     stripePriceId: priceId,
-    subscriptionEndDate: (subscription as any).current_period_end
-      ? new Date((subscription as any).current_period_end * 1000)
-      : undefined,
     updatedAt: new Date(),
-  });
+  };
+
+  // Only add subscriptionEndDate if current_period_end exists
+  if (subscription.current_period_end) {
+    updateData.subscriptionEndDate = new Date(subscription.current_period_end * 1000);
+  }
+
+  await updateDoc(doc(db, 'agents', agentId), updateData);
 
   console.log(`[Webhook] Successfully updated subscription for agent ${agentId}: ${status}`);
 }
