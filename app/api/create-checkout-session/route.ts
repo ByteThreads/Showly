@@ -3,7 +3,7 @@ import { stripe, STRIPE_PRICES } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
   try {
-    const { agentId, agentEmail, agentName, stripeCustomerId, priceType } = await request.json();
+    const { agentId, agentEmail, agentName, stripeCustomerId, priceType, hasStartedTrial } = await request.json();
 
     if (!agentId || !agentEmail || !agentName) {
       return NextResponse.json(
@@ -72,14 +72,16 @@ export async function POST(request: NextRequest) {
       billing_address_collection: 'auto',  // Only ask if required by payment method
 
       // Custom text/messaging
-      custom_text: {
+      // Only show trial message if user hasn't already started trial
+      custom_text: hasStartedTrial ? undefined : {
         submit: {
           message: 'Start your 14-day free trial - no charges until trial ends',
         },
       },
 
       subscription_data: {
-        trial_period_days: 14,  // 14-day trial
+        // Only give trial if user hasn't already started one
+        trial_period_days: hasStartedTrial ? undefined : 14,
         description: isFounder
           ? 'Showly Founder Plan - Lock in $29/mo forever'
           : 'Showly Pro Plan - $39/mo',

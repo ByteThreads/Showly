@@ -18,7 +18,7 @@ interface ShowingWithProperty extends Showing {
 }
 
 export default function DashboardPage() {
-  const { agent } = useAuth();
+  const { agent, refreshAgent } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [todayShowings, setTodayShowings] = useState(0);
@@ -39,6 +39,36 @@ export default function DashboardPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [greeting, setGreeting] = useState('');
+  const [searchParams] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search);
+    }
+    return new URLSearchParams();
+  });
+
+  // Handle successful checkout - poll for subscription update
+  useEffect(() => {
+    const success = searchParams.get('success');
+    if (success === 'true' && agent) {
+      // Poll every 2 seconds for up to 30 seconds to check if subscription updated
+      let attempts = 0;
+      const maxAttempts = 15;
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        await refreshAgent();
+
+        // Stop polling if subscription is active/trialing or max attempts reached
+        if (agent.subscriptionStatus === 'active' || agent.subscriptionStatus === 'trial' || attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          // Remove success param from URL
+          window.history.replaceState({}, '', '/dashboard');
+        }
+      }, 2000);
+
+      return () => clearInterval(pollInterval);
+    }
+  }, [searchParams, agent, refreshAgent]);
 
   useEffect(() => {
     if (!agent) return;

@@ -61,6 +61,7 @@ export default function PricingContent() {
           agentName: agent.name,
           stripeCustomerId: agent.stripeCustomerId,
           priceType,
+          hasStartedTrial: !!agent.trialStartDate, // Pass whether user already started trial
         }),
       });
 
