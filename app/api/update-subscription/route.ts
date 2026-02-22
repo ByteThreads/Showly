@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 
 // Secret token to authenticate internal requests
 const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET;
@@ -28,9 +27,10 @@ export async function POST(request: NextRequest) {
 
     // If no agentId, find by customerId
     if (!targetAgentId && customerId) {
-      const agentsRef = collection(db, 'agents');
-      const q = query(agentsRef, where('stripeCustomerId', '==', customerId));
-      const snapshot = await getDocs(q);
+      const snapshot = await adminDb.collection('agents')
+        .where('stripeCustomerId', '==', customerId)
+        .limit(1)
+        .get();
 
       if (snapshot.empty) {
         console.error('[Update Subscription] No agent found with customerId:', customerId);
@@ -52,9 +52,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update the agent document
-    const agentRef = doc(db, 'agents', targetAgentId);
-    await updateDoc(agentRef, {
+    // Update the agent document using Admin SDK
+    await adminDb.collection('agents').doc(targetAgentId).update({
       ...updateData,
       updatedAt: new Date(),
     });
