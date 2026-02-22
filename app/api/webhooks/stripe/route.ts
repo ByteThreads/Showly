@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { stripe, mapStripeStatus } from '@/lib/stripe';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import type { Agent } from '@/types/database';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -136,7 +135,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Update agent document with Stripe customer ID and founder status
-  await updateDoc(doc(db, 'agents', agentId), {
+  await adminDb.collection('agents').doc(agentId).update({
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
     isFounderCustomer: isFounder,
@@ -186,7 +185,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     if (currentPeriodEnd) {
       updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
     }
-    await updateDoc(doc(db, 'agents', agentDoc.id), updateData);
+    await adminDb.collection('agents').doc(agentDoc.id).update(updateData);
   } else {
     const updateData: any = {
       subscriptionStatus: 'cancelled',
@@ -195,7 +194,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     if (currentPeriodEnd) {
       updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
     }
-    await updateDoc(doc(db, 'agents', agentId), updateData);
+    await adminDb.collection('agents').doc(agentId).update(updateData);
   }
 }
 
@@ -209,7 +208,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   // Payment succeeded, ensure status is active
-  await updateDoc(doc(db, 'agents', agentDoc.id), {
+  await adminDb.collection('agents').doc(agentDoc.id).update({
     subscriptionStatus: 'active',
     updatedAt: new Date(),
   });
@@ -227,7 +226,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   }
 
   // Payment failed, set status to past_due
-  await updateDoc(doc(db, 'agents', agentDoc.id), {
+  await adminDb.collection('agents').doc(agentDoc.id).update({
     subscriptionStatus: 'past_due',
     updatedAt: new Date(),
   });
@@ -261,19 +260,21 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
     updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
   }
 
-  await updateDoc(doc(db, 'agents', agentId), updateData);
+  await adminDb.collection('agents').doc(agentId).update(updateData);
 
   console.log(`[Webhook] Successfully updated subscription for agent ${agentId}: ${status}`);
 }
 
 async function findAgentByStripeCustomer(customerId: string): Promise<Agent | null> {
-  const agentsRef = collection(db, 'agents');
-  const q = query(agentsRef, where('stripeCustomerId', '==', customerId));
-  const snapshot = await getDocs(q);
+  const snapshot = await adminDb.collection('agents')
+    .where('stripeCustomerId', '==', customerId)
+    .limit(1)
+    .get();
 
   if (snapshot.empty) {
     return null;
   }
 
-  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Agent;
+  const doc = snapshot.docs[0];
+  return { id: doc.id, ...doc.data() } as Agent;
 }
