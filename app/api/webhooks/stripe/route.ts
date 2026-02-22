@@ -121,7 +121,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const subscriptionId = session.subscription as string;
 
   // Get the subscription to check its status
-  let subscriptionStatus: 'active' | 'trial' = 'active';
+  let subscriptionStatus = 'active';
   let subscriptionEndDate: Date | undefined;
 
   if (subscriptionId) {
