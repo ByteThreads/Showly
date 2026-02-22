@@ -120,6 +120,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customerId = session.customer as string;
   const subscriptionId = session.subscription as string;
 
+  // Get the subscription to check its status
+  let subscriptionStatus: 'active' | 'trial' = 'active';
+  let subscriptionEndDate: Date | undefined;
+
+  if (subscriptionId) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      subscriptionStatus = mapStripeStatus(subscription.status);
+      const currentPeriodEnd = (subscription as any).current_period_end as number | undefined;
+      if (currentPeriodEnd) {
+        subscriptionEndDate = new Date(currentPeriodEnd * 1000);
+      }
+      console.log(`[Webhook] Retrieved subscription status: ${subscription.status} -> ${subscriptionStatus}`);
+    } catch (error) {
+      console.error('[Webhook] Error retrieving subscription:', error);
+    }
+  }
+
   // Get founder number if this is a founder customer
   let founderNumber: number | undefined;
   if (isFounder) {
@@ -134,16 +152,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
   }
 
-  // Update agent document with Stripe customer ID and founder status
-  await adminDb.collection('agents').doc(agentId).update({
+  // Update agent document with Stripe customer ID, subscription status, and founder status
+  const updateData: any = {
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
+    subscriptionStatus: subscriptionStatus,
     isFounderCustomer: isFounder,
     ...(founderNumber ? { founderNumber } : {}),
     updatedAt: new Date(),
-  });
+  };
 
-  console.log(`[Webhook] Checkout completed for agent ${agentId}, founder: ${isFounder}`);
+  if (subscriptionEndDate) {
+    updateData.subscriptionEndDate = subscriptionEndDate;
+  }
+
+  await adminDb.collection('agents').doc(agentId).update(updateData);
+
+  console.log(`[Webhook] Checkout completed for agent ${agentId}, founder: ${isFounder}, status: ${subscriptionStatus}`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
