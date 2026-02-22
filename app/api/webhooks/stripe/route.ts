@@ -8,9 +8,16 @@ import type { Agent } from '@/types/database';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
+// Handle GET requests (Stripe sends these for endpoint verification)
+export async function GET(request: NextRequest) {
+  console.log('[Stripe Webhook] Received GET request (verification)');
+  return NextResponse.json({ status: 'Webhook endpoint is active' }, { status: 200 });
+}
+
 export async function POST(request: NextRequest) {
   console.log('[Stripe Webhook] Received POST request');
   console.log('[Stripe Webhook] URL:', request.url);
+  console.log('[Stripe Webhook] Host:', request.headers.get('host'));
 
   const body = await request.text();
   const headersList = await headers();
@@ -26,6 +33,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Check if webhook secret is configured
+  if (!webhookSecret) {
+    console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not configured!');
+    return NextResponse.json(
+      { error: 'Webhook secret not configured' },
+      { status: 500 }
+    );
+  }
+
+  console.log('[Stripe Webhook] Webhook secret configured:', webhookSecret.substring(0, 10) + '...');
+
   let event: Stripe.Event;
 
   try {
@@ -33,6 +51,8 @@ export async function POST(request: NextRequest) {
     console.log('[Stripe Webhook] Event verified successfully:', event.type);
   } catch (err: any) {
     console.error('[Stripe Webhook] Signature verification failed:', err.message);
+    console.error('[Stripe Webhook] Body length:', body.length);
+    console.error('[Stripe Webhook] Signature:', signature.substring(0, 20) + '...');
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
       { status: 400 }
