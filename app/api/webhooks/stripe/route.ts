@@ -2,31 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { stripe, mapStripeStatus } from '@/lib/stripe';
+import { adminDb } from '@/lib/firebase-admin';
 import type { Agent } from '@/types/database';
-
-// Helper function to update agent via internal API
-async function updateAgentViaAPI(agentId: string | null, customerId: string | null, updateData: any) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const response = await fetch(`${baseUrl}/api/update-subscription`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.INTERNAL_API_SECRET}`,
-    },
-    body: JSON.stringify({
-      agentId,
-      customerId,
-      updateData,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Failed to update agent: ${error.error}`);
-  }
-
-  return response.json();
-}
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -158,68 +135,102 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Update agent document with Stripe customer ID and founder status
-  await updateAgentViaAPI(agentId, null, {
+  await adminDb.collection('agents').doc(agentId).update({
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
     isFounderCustomer: isFounder,
     ...(founderNumber ? { founderNumber } : {}),
+    updatedAt: new Date(),
   });
 
-  console.log(`Checkout completed for agent ${agentId}, founder: ${isFounder}`);
+  console.log(`[Webhook] Checkout completed for agent ${agentId}, founder: ${isFounder}`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const agentId = subscription.metadata?.agentId;
   const customerId = subscription.customer as string;
-
-  await updateAgentSubscription(agentId || null, customerId, subscription);
+  await updateAgentSubscription(customerId, subscription);
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  const agentId = subscription.metadata?.agentId;
   const customerId = subscription.customer as string;
   const currentPeriodEnd = (subscription as any).current_period_end as number | undefined;
 
+  // Find agent by customer ID
+  const agentQuery = await adminDb.collection('agents')
+    .where('stripeCustomerId', '==', customerId)
+    .limit(1)
+    .get();
+
+  if (agentQuery.empty) {
+    console.error('[Webhook] No agent found for deleted subscription');
+    return;
+  }
+
   const updateData: any = {
     subscriptionStatus: 'cancelled',
+    updatedAt: new Date(),
   };
 
   if (currentPeriodEnd) {
     updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
   }
 
-  await updateAgentViaAPI(agentId || null, customerId, updateData);
+  await agentQuery.docs[0].ref.update(updateData);
+  console.log(`[Webhook] Subscription cancelled for agent ${agentQuery.docs[0].id}`);
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
 
+  // Find agent by customer ID
+  const agentQuery = await adminDb.collection('agents')
+    .where('stripeCustomerId', '==', customerId)
+    .limit(1)
+    .get();
+
+  if (agentQuery.empty) {
+    console.error('[Webhook] No agent found for payment succeeded');
+    return;
+  }
+
   // Payment succeeded, ensure status is active
-  await updateAgentViaAPI(null, customerId, {
+  await agentQuery.docs[0].ref.update({
     subscriptionStatus: 'active',
+    updatedAt: new Date(),
   });
 
-  console.log(`Payment succeeded for customer ${customerId}`);
+  console.log(`[Webhook] Payment succeeded for agent ${agentQuery.docs[0].id}`);
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
 
+  // Find agent by customer ID
+  const agentQuery = await adminDb.collection('agents')
+    .where('stripeCustomerId', '==', customerId)
+    .limit(1)
+    .get();
+
+  if (agentQuery.empty) {
+    console.error('[Webhook] No agent found for payment failed');
+    return;
+  }
+
   // Payment failed, set status to past_due
-  await updateAgentViaAPI(null, customerId, {
+  await agentQuery.docs[0].ref.update({
     subscriptionStatus: 'past_due',
+    updatedAt: new Date(),
   });
 
-  console.log(`Payment failed for customer ${customerId}`);
+  console.log(`[Webhook] Payment failed for agent ${agentQuery.docs[0].id}`);
 }
 
-async function updateAgentSubscription(agentId: string | null, customerId: string, subscription: Stripe.Subscription) {
+async function updateAgentSubscription(customerId: string, subscription: Stripe.Subscription) {
   const status = mapStripeStatus(subscription.status);
   const priceId = subscription.items.data[0]?.price.id;
   const currentPeriodEnd = (subscription as any).current_period_end as number | undefined;
 
   console.log(`[Webhook] Updating subscription:`, {
-    agentId,
     customerId,
     stripeStatus: subscription.status,
     mappedStatus: status,
@@ -228,11 +239,23 @@ async function updateAgentSubscription(agentId: string | null, customerId: strin
     currentPeriodEnd,
   });
 
+  // Find agent by customer ID
+  const agentQuery = await adminDb.collection('agents')
+    .where('stripeCustomerId', '==', customerId)
+    .limit(1)
+    .get();
+
+  if (agentQuery.empty) {
+    console.error('[Webhook] No agent found for customer:', customerId);
+    return;
+  }
+
   // Build update object, only include subscriptionEndDate if it exists
   const updateData: any = {
     subscriptionStatus: status,
     stripeSubscriptionId: subscription.id,
     stripePriceId: priceId,
+    updatedAt: new Date(),
   };
 
   // Only add subscriptionEndDate if current_period_end exists
@@ -240,8 +263,8 @@ async function updateAgentSubscription(agentId: string | null, customerId: strin
     updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
   }
 
-  await updateAgentViaAPI(agentId, customerId, updateData);
+  await agentQuery.docs[0].ref.update(updateData);
 
-  console.log(`[Webhook] Successfully updated subscription: ${status}`);
+  console.log(`[Webhook] Successfully updated subscription for agent ${agentQuery.docs[0].id}: ${status}`);
 }
 
