@@ -2,8 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { stripe, mapStripeStatus } from '@/lib/stripe';
-import { adminDb } from '@/lib/firebase-admin';
 import type { Agent } from '@/types/database';
+
+// Helper function to update agent via internal API
+async function updateAgentViaAPI(agentId: string | null, customerId: string | null, updateData: any) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const response = await fetch(`${baseUrl}/api/update-subscription`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.INTERNAL_API_SECRET}`,
+    },
+    body: JSON.stringify({
+      agentId,
+      customerId,
+      updateData,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Failed to update agent: ${error.error}`);
+  }
+
+  return response.json();
+}
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -135,12 +158,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Update agent document with Stripe customer ID and founder status
-  await adminDb.collection('agents').doc(agentId).update({
+  await updateAgentViaAPI(agentId, null, {
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
     isFounderCustomer: isFounder,
     ...(founderNumber ? { founderNumber } : {}),
-    updatedAt: new Date(),
   });
 
   console.log(`Checkout completed for agent ${agentId}, founder: ${isFounder}`);
@@ -148,98 +170,57 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const agentId = subscription.metadata?.agentId;
+  const customerId = subscription.customer as string;
 
-  if (!agentId) {
-    // Try to find agent by customer ID
-    const customerId = subscription.customer as string;
-    const agentDoc = await findAgentByStripeCustomer(customerId);
-
-    if (!agentDoc) {
-      console.error('No agent found for subscription:', subscription.id);
-      return;
-    }
-
-    await updateAgentSubscription(agentDoc.id, subscription);
-  } else {
-    await updateAgentSubscription(agentId, subscription);
-  }
+  await updateAgentSubscription(agentId || null, customerId, subscription);
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const agentId = subscription.metadata?.agentId;
+  const customerId = subscription.customer as string;
   const currentPeriodEnd = (subscription as any).current_period_end as number | undefined;
 
-  if (!agentId) {
-    const customerId = subscription.customer as string;
-    const agentDoc = await findAgentByStripeCustomer(customerId);
+  const updateData: any = {
+    subscriptionStatus: 'cancelled',
+  };
 
-    if (!agentDoc) {
-      console.error('No agent found for deleted subscription:', subscription.id);
-      return;
-    }
-
-    const updateData: any = {
-      subscriptionStatus: 'cancelled',
-      updatedAt: new Date(),
-    };
-    if (currentPeriodEnd) {
-      updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
-    }
-    await adminDb.collection('agents').doc(agentDoc.id).update(updateData);
-  } else {
-    const updateData: any = {
-      subscriptionStatus: 'cancelled',
-      updatedAt: new Date(),
-    };
-    if (currentPeriodEnd) {
-      updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
-    }
-    await adminDb.collection('agents').doc(agentId).update(updateData);
+  if (currentPeriodEnd) {
+    updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
   }
+
+  await updateAgentViaAPI(agentId || null, customerId, updateData);
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
-  const agentDoc = await findAgentByStripeCustomer(customerId);
-
-  if (!agentDoc) {
-    console.error('No agent found for payment succeeded:', invoice.id);
-    return;
-  }
 
   // Payment succeeded, ensure status is active
-  await adminDb.collection('agents').doc(agentDoc.id).update({
+  await updateAgentViaAPI(null, customerId, {
     subscriptionStatus: 'active',
-    updatedAt: new Date(),
   });
 
-  console.log(`Payment succeeded for agent ${agentDoc.id}`);
+  console.log(`Payment succeeded for customer ${customerId}`);
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
-  const agentDoc = await findAgentByStripeCustomer(customerId);
-
-  if (!agentDoc) {
-    console.error('No agent found for payment failed:', invoice.id);
-    return;
-  }
 
   // Payment failed, set status to past_due
-  await adminDb.collection('agents').doc(agentDoc.id).update({
+  await updateAgentViaAPI(null, customerId, {
     subscriptionStatus: 'past_due',
-    updatedAt: new Date(),
   });
 
-  console.log(`Payment failed for agent ${agentDoc.id}`);
+  console.log(`Payment failed for customer ${customerId}`);
 }
 
-async function updateAgentSubscription(agentId: string, subscription: Stripe.Subscription) {
+async function updateAgentSubscription(agentId: string | null, customerId: string, subscription: Stripe.Subscription) {
   const status = mapStripeStatus(subscription.status);
   const priceId = subscription.items.data[0]?.price.id;
   const currentPeriodEnd = (subscription as any).current_period_end as number | undefined;
 
-  console.log(`[Webhook] Updating agent ${agentId} subscription:`, {
+  console.log(`[Webhook] Updating subscription:`, {
+    agentId,
+    customerId,
     stripeStatus: subscription.status,
     mappedStatus: status,
     priceId,
@@ -252,7 +233,6 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
     subscriptionStatus: status,
     stripeSubscriptionId: subscription.id,
     stripePriceId: priceId,
-    updatedAt: new Date(),
   };
 
   // Only add subscriptionEndDate if current_period_end exists
@@ -260,21 +240,8 @@ async function updateAgentSubscription(agentId: string, subscription: Stripe.Sub
     updateData.subscriptionEndDate = new Date(currentPeriodEnd * 1000);
   }
 
-  await adminDb.collection('agents').doc(agentId).update(updateData);
+  await updateAgentViaAPI(agentId, customerId, updateData);
 
-  console.log(`[Webhook] Successfully updated subscription for agent ${agentId}: ${status}`);
+  console.log(`[Webhook] Successfully updated subscription: ${status}`);
 }
 
-async function findAgentByStripeCustomer(customerId: string): Promise<Agent | null> {
-  const snapshot = await adminDb.collection('agents')
-    .where('stripeCustomerId', '==', customerId)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    return null;
-  }
-
-  const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() } as Agent;
-}
